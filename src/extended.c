@@ -48,6 +48,16 @@ G_MODULE_EXPORT Mode mode;
 const gchar* EXTENDED_SCRIPT_OPTION = "extended-script-file";
 const gchar* EMPTY_STRING = "";
 
+typedef enum {
+    SEND_ACTION = 0,
+    FILTER_USING_ROFI = 1,
+    num_of_input_actions = 2
+} InputAction;
+
+const char *input_action_names[num_of_input_actions] = {
+    "send",
+    "filter",
+};
 
 typedef struct
 {
@@ -58,16 +68,18 @@ typedef struct
 
 typedef struct
 {
-    RofiDistance windowWidth;
+    InputAction inputAction;
     GString *message;
     GString *overlay;
     GString *prompt;
+    GString *input;
     GArray *lines;
 } PageData;
 
 typedef struct
 {
     PageData * currentPageData;
+    GString * input_format;
 
     JsonParser *parser;
     JsonObject *root;
@@ -95,6 +107,7 @@ void rofi_view_switch_mode ( RofiViewState *state, Mode *mode );
 RofiViewState * rofi_view_get_active ( void );
 extern void rofi_view_set_overlay(RofiViewState * state, const char *text);
 extern void rofi_view_reload ( void );
+extern const char * rofi_view_get_user_input ( const RofiViewState *state );
 
 
 pid_t popen2(const char *command, int *infp, int *outfp){
@@ -135,15 +148,83 @@ pid_t popen2(const char *command, int *infp, int *outfp){
 
 }
 
+// Result is an allocated a new string
+char *str_replace(const char *orig, const char *rep, const char *with) {
+    char *result; // the return string
+    char *ins;    // the next insert point
+    char *tmp_orig = (char *) orig; // the next insert point
+    char *tmp;    // varies
+    int len_rep;  // length of rep (the string to remove)
+    int len_with; // length of with (the string to replace rep with)
+    int len_front; // distance between rep and end of last rep
+    int count;    // number of replacements
+
+    // sanity checks and initialization
+    if (!orig || !rep)
+        return NULL;
+    len_rep = strlen(rep);
+    if (len_rep == 0)
+        return NULL; // empty rep causes infinite loop during count
+    if (!with)
+        with = "";
+    len_with = strlen(with);
+
+    // count the number of replacements needed
+    ins = tmp_orig;
+    for (count = 0; tmp = strstr(ins, rep); ++count) {
+        ins = tmp + len_rep;
+    }
+
+    tmp = result = malloc(strlen(orig) + (len_with - len_rep) * count + 1);
+
+    if (!result)
+        return NULL;
+
+    // first time through the loop, all the variable are set correctly
+    // from here on,
+    //    tmp points to the end of the result string
+    //    ins points to the next occurrence of rep in orig
+    //    orig points to the remainder of orig after "end of rep"
+    while (count--) {
+        ins = strstr(tmp_orig, rep);
+        len_front = ins - tmp_orig;
+        tmp = strncpy(tmp, tmp_orig, len_front) + len_front;
+        tmp = strcpy(tmp, with) + len_with;
+        tmp_orig += len_front + len_rep; // move to next "end of rep"
+    }
+    strcpy(tmp, tmp_orig);
+    return result;
+}
+
+char *str_replace_in(char **orig, const char *rep, const char *with) {
+    char * result = str_replace(*orig, rep, with);
+    if( result != NULL ){
+        free(*orig);
+        *orig = result;
+    }
+    return *orig;
+}
+
+char *str_replace_in_escaped(char **orig, const char *rep, const char *with) {
+    const gchar * escaped_with = g_strescape(with, NULL);
+    char * result = str_replace_in(orig, rep, escaped_with);
+    g_free((char *) escaped_with);
+    return result;
+}
+
+
+
 /***********************
     Page data methods
 ************************/
 
 PageData * page_data_new(){
     PageData * pageData = g_malloc0( sizeof ( *pageData ) );
+    pageData->inputAction = FILTER_USING_ROFI;
     pageData->message = g_string_sized_new(256);
     pageData->overlay = g_string_sized_new(64);
     pageData->prompt = g_string_sized_new(64);
+    pageData->input = g_string_sized_new(64);
     pageData->lines = g_array_new (FALSE, TRUE, sizeof (LineData));
     return pageData;
 }
@@ -152,6 +233,7 @@ void page_data_free(PageData * pageData){
     g_string_free(pageData->message, TRUE);
     g_string_free(pageData->overlay, TRUE);
     g_string_free(pageData->prompt, TRUE);
+    g_string_free(pageData->input, TRUE);
     g_free(pageData);
 }
 
@@ -197,7 +279,7 @@ void page_data_clear_lines(PageData * pageData){
 
 static void extended_mode_private_data_assign_string_to_root_member(ExtendedModePrivateData * data, GString * str, const char * member){
     JsonNode* memberNode = json_object_get_member(data->root, member);
-    const gchar* memberVal = json_node_get_string_or_else(memberNode, EMPTY_STRING);
+    const gchar* memberVal = json_node_get_string_or_else(memberNode, str->str);
     g_string_assign(str,memberVal);
 
 }
@@ -208,6 +290,19 @@ static void extended_mode_private_data_update_page(ExtendedModePrivateData * dat
     data->root = json_node_get_object(json_parser_get_root(data->parser));
     JsonObject *root = data->root;
     PageData * pageData = data->currentPageData;
+
+    JsonNode* input_action_node = json_object_get_member(data->root, "input action");
+    const gchar* input_action_str = json_node_get_string_or_else(input_action_node, NULL);
+    if(input_action_str != NULL){
+        for (int i = 0; i < num_of_input_actions; ++i)
+        {
+            if(g_strcmp0(input_action_str, input_action_names[i]) == 0){
+                pageData->inputAction = (InputAction) i;
+            }
+        }
+    }
+
+
 
     extended_mode_private_data_assign_string_to_root_member(data, pageData->message, "message");
     extended_mode_private_data_assign_string_to_root_member(data, pageData->overlay, "overlay");
@@ -229,6 +324,21 @@ static void extended_mode_private_data_update_page(ExtendedModePrivateData * dat
         }
     }
 }
+
+void extended_mode_private_data_send_to_cmd_input ( ExtendedModePrivateData * data, const char * action_name, const char * action_value){
+        GIOChannel * cmd_input_channel = data->cmd_input_fd_io_channel;
+        const gchar * format = data->input_format->str;
+        gchar * format_result = str_replace(format, "{{name}}", action_name);
+        format_result = str_replace_in(&format_result, "{{value}}", action_value);
+        format_result = str_replace_in_escaped(&format_result, "{{name_escaped}}", action_name);
+        format_result = str_replace_in_escaped(&format_result, "{{value_escaped}}", action_value);
+        gsize bytes_witten;
+        g_io_channel_write_chars(cmd_input_channel, format_result, -1, &bytes_witten, &data->error);
+        g_io_channel_write_unichar(cmd_input_channel, '\n', &data->error);
+        g_io_channel_flush(cmd_input_channel, &data->error);
+        g_free(format_result);
+}
+
 
 /**************************
   mode extension methods
@@ -312,13 +422,14 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
  extended mode methods
 ***********************/
 
+
 static int extended_mode_init ( Mode *sw )
 {
     if ( mode_get_private_data ( sw ) == NULL ) {
         ExtendedModePrivateData *pd = g_malloc0 ( sizeof ( *pd ) );
         mode_set_private_data ( sw, (void *) pd );
         pd->currentPageData = page_data_new();
-
+        pd->input_format = g_string_new("{\"name\":\"{{name_escaped}}\", \"value\":\"{{value_escaped}}\"}");
         char *cmd = NULL;
         if (find_arg_str(EXTENDED_SCRIPT_OPTION, &cmd)) {
             pd->cmd = g_strdup(cmd);
@@ -354,22 +465,33 @@ static unsigned int extended_mode_get_num_entries ( const Mode *sw )
 static ModeMode extended_mode_result ( Mode *sw, int mretv, char **input, unsigned int selected_line )
 {
     ModeMode           retv  = MODE_EXIT;
-    ModeMode           resetDialog  = RESET_DIALOG;
-    ExtendedModePrivateData *rmpd = mode_get_private_data_extended_mode( sw );
+    ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    PageData * pageData = data->currentPageData;
 
     if ( mretv & MENU_NEXT ) {
         retv = NEXT_DIALOG;
     } else if ( mretv & MENU_PREVIOUS ) {
         retv = PREVIOUS_DIALOG;
     } else if ( mretv & MENU_QUICK_SWITCH ) {
+        int custom_key = retv%20;
+        char str[8];
+        snprintf(str, 8, "%d", 42);
+        extended_mode_private_data_send_to_cmd_input(data, "custom key", str);
         retv = RESET_DIALOG;
     } else if ( ( mretv & MENU_OK ) ) {
+        LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
+        extended_mode_private_data_send_to_cmd_input(data, "select entry", lineData->text);
 
         retv = RESET_DIALOG;
     } else if ( ( mretv & MENU_ENTRY_DELETE ) == MENU_ENTRY_DELETE ) {
+        LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
+        extended_mode_private_data_send_to_cmd_input(data, "delete entry", lineData->text);
         retv = RESET_DIALOG;
     }
-    printf("%d\n", retv);
+     else if ( ( mretv & MENU_CUSTOM_INPUT ) ) {
+        extended_mode_private_data_send_to_cmd_input(data, "execute custom input", *input);
+        retv = RESET_DIALOG;
+    }
     return retv;
 }
 
@@ -377,6 +499,8 @@ static void extended_mode_destroy ( Mode *sw )
 {
     ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
     if ( data != NULL ) {
+        kill(data->cmd_pid, SIGTERM);
+
         g_source_remove ( data->cmd_output_fd_io_channel_watcher );
 
         g_object_unref ( data->parser );
@@ -385,10 +509,8 @@ static void extended_mode_destroy ( Mode *sw )
         page_data_free ( data->currentPageData );
         g_free ( data->cmd_input_fd_io_channel );
         g_free ( data->cmd_output_fd_io_channel );
-
         g_free ( data );
         mode_set_private_data ( sw, NULL );
-        kill(data->cmd_pid, SIGTERM);
     }
 }
 
@@ -407,15 +529,33 @@ static char * extended_mode_get_display_value ( const Mode *sw, unsigned int sel
 static int extended_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens, unsigned int selected_line )
 {
     PageData * pageData = mode_get_private_data_current_page( sw );
+    switch(pageData->inputAction){
+        case SEND_ACTION: return TRUE;
+    }
     LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
     return helper_token_match ( tokens, lineData->text);
 }
 
 static char * extended_mode_get_message ( const Mode *sw )
 {
+
+    ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = mode_get_private_data_current_page( sw );
     gchar* result = g_strdup_printf("%s",pageData->message->str);
     return result;
+}
+
+static char * extended_mode_preprocess_input ( Mode *sw, const char *input )
+{
+    ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    PageData * pageData = data->currentPageData;
+
+    GString * inputStr = pageData->input;
+    if(pageData->inputAction == SEND_ACTION && g_strcmp0(inputStr->str, input) != 0){
+        g_string_assign(inputStr, input);
+        extended_mode_private_data_send_to_cmd_input(data, "input action", input);
+    }
+    return g_strdup_printf("%s",input);
 }
 
 Mode mode =
@@ -431,7 +571,7 @@ Mode mode =
     ._get_display_value = extended_mode_get_display_value,
     ._get_message       = extended_mode_get_message,
     ._get_completion    = NULL,
-    ._preprocess_input  = NULL,
+    ._preprocess_input  = extended_mode_preprocess_input,
     .private_data       = NULL,
     .free               = NULL,
 };

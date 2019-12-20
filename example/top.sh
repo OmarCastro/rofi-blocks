@@ -1,5 +1,10 @@
 #!/bin/bash
-
+cleanup() {
+        local pids=$(jobs -pr)
+        [ -n "$pids" ] && kill $pids
+}
+trap "exit 0" SIGINT SIGQUIT SIGTERM
+trap "cleanup" EXIT
 
 toLinesJson(){
 	echo "$1" | sed -e 's/\\/\\\\/g' -e 's/\"/\\"/g' -e 's/.*/"&"/' | paste -sd "," -
@@ -8,7 +13,6 @@ toLinesJson(){
 toStringJson(){
 	echo "$1" | sed -e 's/\\/\\\\/g' -e 's/\"/\\"/g' -e '$!s/.*/&\\n/' | paste -sd "" -
 }
-
 
 top -c -b | while IFS= read -r line; do
 	TOP="$line"
@@ -34,3 +38,4 @@ EOF
 	fi
 done &
 
+wait $!
