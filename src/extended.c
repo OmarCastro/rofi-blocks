@@ -68,7 +68,6 @@ typedef struct
 
 typedef struct
 {
-    InputAction inputAction;
     GString *message;
     GString *overlay;
     GString *prompt;
@@ -80,6 +79,7 @@ typedef struct
 {
     PageData * currentPageData;
     GString * input_format;
+    InputAction input_action;
 
     JsonParser *parser;
     JsonObject *root;
@@ -88,9 +88,10 @@ typedef struct
     GString * buffer;
     
     char *cmd;
-    pid_t cmd_pid;
+    GPid cmd_pid;
     int cmd_input_fd;
     int cmd_output_fd;
+    gboolean close_on_child_exit;
     GIOChannel * cmd_input_fd_io_channel;
     GIOChannel * cmd_output_fd_io_channel;
     guint cmd_output_fd_io_channel_watcher;
@@ -98,16 +99,16 @@ typedef struct
 
 } ExtendedModePrivateData;
 
-/**************
-  utils
-***************/
 
 typedef struct RofiViewState RofiViewState;
 void rofi_view_switch_mode ( RofiViewState *state, Mode *mode );
 RofiViewState * rofi_view_get_active ( void );
 extern void rofi_view_set_overlay(RofiViewState * state, const char *text);
 extern void rofi_view_reload ( void );
-extern const char * rofi_view_get_user_input ( const RofiViewState *state );
+
+/**************
+  utils
+***************/
 
 
 pid_t popen2(const char *command, int *infp, int *outfp){
@@ -131,7 +132,7 @@ pid_t popen2(const char *command, int *infp, int *outfp){
         close(p_stdout[READ]);
         dup2(p_stdout[WRITE], WRITE);
         execl(command, NULL);
-        printf("{\"message\":\"Error loading %s:%s\"}\n", command, strerror(errno));
+        printf("{\"close on exit\": false, \"message\":\"Error loading %s:%s\"}\n", command, strerror(errno));
         perror("execl");
         exit(1);
     }
@@ -212,6 +213,30 @@ char *str_replace_in_escaped(char **orig, const char *rep, const char *with) {
     return result;
 }
 
+/*************************
+  json glib extensions
+**************************/
+
+gboolean json_node_get_boolean_or_else(JsonNode * node, gboolean else_value){
+    return node != NULL &&
+           json_node_get_value_type(node) == G_TYPE_BOOLEAN ?
+           json_node_get_boolean(node) : else_value;
+}
+
+const gchar * json_node_get_string_or_else(JsonNode * node, const gchar * else_value){
+    return node != NULL &&
+           json_node_get_value_type(node) == G_TYPE_STRING ?
+           json_node_get_string(node) : else_value;
+}
+
+
+gboolean json_object_get_boolean_member_or_else(JsonObject * node, const gchar * member, gboolean else_value){
+    return json_node_get_boolean_or_else(json_object_get_member(node, member), else_value);
+}
+
+const gchar * json_object_get_string_member_or_else(JsonObject * node, const gchar * member, const gchar * else_value){
+    return json_node_get_string_or_else(json_object_get_member(node, member), else_value);
+}
 
 
 /***********************
@@ -220,7 +245,6 @@ char *str_replace_in_escaped(char **orig, const char *rep, const char *with) {
 
 PageData * page_data_new(){
     PageData * pageData = g_malloc0( sizeof ( *pageData ) );
-    pageData->inputAction = FILTER_USING_ROFI;
     pageData->message = g_string_sized_new(256);
     pageData->overlay = g_string_sized_new(64);
     pageData->prompt = g_string_sized_new(64);
@@ -240,18 +264,6 @@ void page_data_free(PageData * pageData){
 void page_data_add_line(PageData * pageData, const gchar * label, gboolean urgent, gboolean highlight){
     LineData line = { .text = label, .urgent = urgent, .highlight = highlight };
     g_array_append_val(pageData->lines, line);
-}
-
-gboolean json_node_get_boolean_or_else(JsonNode * node, gboolean else_value){
-    return node != NULL &&
-           json_node_get_value_type(node) == G_TYPE_BOOLEAN ?
-           json_node_get_boolean(node) : else_value;
-}
-
-const gchar * json_node_get_string_or_else(JsonNode * node, const gchar * else_value){
-    return node != NULL &&
-           json_node_get_value_type(node) == G_TYPE_STRING ?
-           json_node_get_string(node) : else_value;
 }
 
 void page_data_add_line_json_node(PageData * pageData, JsonNode * element){
@@ -277,43 +289,50 @@ void page_data_clear_lines(PageData * pageData){
   extended mode pirvate data methods
 **************************************/
 
-static void extended_mode_private_data_assign_string_to_root_member(ExtendedModePrivateData * data, GString * str, const char * member){
-    JsonNode* memberNode = json_object_get_member(data->root, member);
-    const gchar* memberVal = json_node_get_string_or_else(memberNode, str->str);
-    g_string_assign(str,memberVal);
-
+static void extended_mode_private_data_update_string(ExtendedModePrivateData * data, GString * str, const char * json_root_member){
+    const gchar* memberVal = json_object_get_string_member_or_else(data->root, json_root_member, NULL);
+    if(memberVal != NULL){
+        g_string_assign(str,memberVal);
+    }
 }
 
-static void extended_mode_private_data_update_page(ExtendedModePrivateData * data){
-    GError * error = NULL;
-    json_parser_load_from_data(data->parser,data->active_line->str,data->active_line->len,&error);
-    data->root = json_node_get_object(json_parser_get_root(data->parser));
-    JsonObject *root = data->root;
-    PageData * pageData = data->currentPageData;
-
-    JsonNode* input_action_node = json_object_get_member(data->root, "input action");
-    const gchar* input_action_str = json_node_get_string_or_else(input_action_node, NULL);
-    if(input_action_str != NULL){
+static void extended_mode_private_data_update_input_action(ExtendedModePrivateData * data){
+    const gchar* input_action = json_object_get_string_member_or_else(data->root, "input action", NULL);
+    if(input_action != NULL){
         for (int i = 0; i < num_of_input_actions; ++i)
         {
-            if(g_strcmp0(input_action_str, input_action_names[i]) == 0){
-                pageData->inputAction = (InputAction) i;
+            if(g_strcmp0(input_action, input_action_names[i]) == 0){
+                data->input_action = (InputAction) i;
             }
         }
     }
+}
 
+static void extended_mode_private_data_update_message(ExtendedModePrivateData * data){
+    extended_mode_private_data_update_string(data, data->currentPageData->message, "message");
+}
 
+static void extended_mode_private_data_update_overlay(ExtendedModePrivateData * data){
+    extended_mode_private_data_update_string(data, data->currentPageData->overlay, "overlay");
+}
 
-    extended_mode_private_data_assign_string_to_root_member(data, pageData->message, "message");
-    extended_mode_private_data_assign_string_to_root_member(data, pageData->overlay, "overlay");
-    extended_mode_private_data_assign_string_to_root_member(data, pageData->prompt, "prompt");
+static void extended_mode_private_data_update_prompt(ExtendedModePrivateData * data){
+    extended_mode_private_data_update_string(data, data->currentPageData->prompt, "prompt");
+}
 
-    const char * OVERLAY_PROP = "overlay";
-    JsonNode* overlayNode = json_object_get_member(data->root, OVERLAY_PROP);
-    const gchar* overlay = json_node_get_string_or_else(overlayNode, EMPTY_STRING);
-    g_string_assign(pageData->overlay,overlay);
+static void extended_mode_private_data_update_input_format(ExtendedModePrivateData * data){
+    extended_mode_private_data_update_string(data, data->input_format, "event format");
+}
 
+static void extended_mode_private_data_update_close_on_child_exit(ExtendedModePrivateData * data){
+    gboolean orig = data->close_on_child_exit;
+    gboolean now = json_object_get_boolean_member_or_else(data->root, "close on exit" , orig);
+    data->close_on_child_exit = now;
+}
 
+static void extended_mode_private_data_update_lines(ExtendedModePrivateData * data){
+    JsonObject *root = data->root;
+    PageData * pageData = data->currentPageData;
     const char * LINES_PROP = "lines";
     if(json_object_has_member(root, LINES_PROP)){
         JsonArray* lines = json_object_get_array_member(data->root, LINES_PROP);
@@ -322,10 +341,37 @@ static void extended_mode_private_data_update_page(ExtendedModePrivateData * dat
         for(int index = 0; index < len; ++index){
             page_data_add_line_json_node(pageData, json_array_get_element(lines, index));
         }
-    }
+    }}
+
+static void extended_mode_private_data_update_page(ExtendedModePrivateData * data){
+    GError * error = NULL;
+    json_parser_load_from_data(data->parser,data->active_line->str,data->active_line->len,&error);
+    data->root = json_node_get_object(json_parser_get_root(data->parser));
+
+    extended_mode_private_data_update_input_action(data);
+    extended_mode_private_data_update_message(data);
+    extended_mode_private_data_update_overlay(data);
+    extended_mode_private_data_update_prompt(data);
+    extended_mode_private_data_update_close_on_child_exit(data);
+    extended_mode_private_data_update_lines(data);
+    
 }
 
 void extended_mode_private_data_send_to_cmd_input ( ExtendedModePrivateData * data, const char * action_name, const char * action_value){
+        GIOChannel * cmd_input_channel = data->cmd_input_fd_io_channel;
+        const gchar * format = data->input_format->str;
+        gchar * format_result = str_replace(format, "{{name}}", action_name);
+        format_result = str_replace_in(&format_result, "{{value}}", action_value);
+        format_result = str_replace_in_escaped(&format_result, "{{name_escaped}}", action_name);
+        format_result = str_replace_in_escaped(&format_result, "{{value_escaped}}", action_value);
+        gsize bytes_witten;
+        g_io_channel_write_chars(cmd_input_channel, format_result, -1, &bytes_witten, &data->error);
+        g_io_channel_write_unichar(cmd_input_channel, '\n', &data->error);
+        g_io_channel_flush(cmd_input_channel, &data->error);
+        g_free(format_result);
+}
+
+void extended_mode_private_data_send_event_to_cmd_input ( ExtendedModePrivateData * data, const char * action_name, const char * action_value){
         GIOChannel * cmd_input_channel = data->cmd_input_fd_io_channel;
         const gchar * format = data->input_format->str;
         gchar * format_result = str_replace(format, "{{name}}", action_name);
@@ -416,6 +462,18 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
     return G_SOURCE_CONTINUE;
 }
 
+// spawn watch, called when child exited
+static void on_child_status (GPid pid, gint status, gpointer context)
+{
+    g_message ("Child %" G_PID_FORMAT " exited %s", pid,
+        g_spawn_check_exit_status (status, NULL) ? "normally" : "abnormally");
+    Mode *sw = (Mode *) context;
+    ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    g_spawn_close_pid (pid);
+    if(data->close_on_child_exit){
+          exit(0);    
+    }
+}
 
 
 /************************
@@ -430,8 +488,11 @@ static int extended_mode_init ( Mode *sw )
         mode_set_private_data ( sw, (void *) pd );
         pd->currentPageData = page_data_new();
         pd->input_format = g_string_new("{\"name\":\"{{name_escaped}}\", \"value\":\"{{value_escaped}}\"}");
+        pd->input_action = FILTER_USING_ROFI;
+
         char *cmd = NULL;
         if (find_arg_str(EXTENDED_SCRIPT_OPTION, &cmd)) {
+            pd->close_on_child_exit = TRUE;
             pd->cmd = g_strdup(cmd);
             pd->cmd_pid = popen2(pd->cmd, &pd->cmd_input_fd, &pd->cmd_output_fd);
              if (pd->cmd_pid <= 0){
@@ -450,6 +511,7 @@ static int extended_mode_init ( Mode *sw )
 
             pd->buffer = g_string_sized_new (1024);
             pd->active_line = g_string_sized_new (1024);
+            g_child_watch_add (pd->cmd_pid, on_child_status, sw);
         }
 
         pd->parser = json_parser_new ();
@@ -528,8 +590,9 @@ static char * extended_mode_get_display_value ( const Mode *sw, unsigned int sel
 
 static int extended_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens, unsigned int selected_line )
 {
-    PageData * pageData = mode_get_private_data_current_page( sw );
-    switch(pageData->inputAction){
+    ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    PageData * pageData = data->currentPageData;
+    switch(data->input_action){
         case SEND_ACTION: return TRUE;
     }
     LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
@@ -551,7 +614,7 @@ static char * extended_mode_preprocess_input ( Mode *sw, const char *input )
     PageData * pageData = data->currentPageData;
 
     GString * inputStr = pageData->input;
-    if(pageData->inputAction == SEND_ACTION && g_strcmp0(inputStr->str, input) != 0){
+    if(data->input_action == SEND_ACTION && g_strcmp0(inputStr->str, input) != 0){
         g_string_assign(inputStr, input);
         extended_mode_private_data_send_to_cmd_input(data, "input action", input);
     }
