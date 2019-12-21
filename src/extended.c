@@ -45,7 +45,7 @@
 
 G_MODULE_EXPORT Mode mode;
 
-const gchar* EXTENDED_SCRIPT_OPTION = "extended-script-file";
+const gchar* EXTENDED_SCRIPT_OPTION = "-extended-script-file";
 const gchar* EMPTY_STRING = "";
 
 typedef enum {
