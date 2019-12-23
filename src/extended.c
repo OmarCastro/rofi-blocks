@@ -441,6 +441,7 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
         g_string_append_c(buffer, unichar);
         if( unichar == '\n' ){
             if(buffer->len > 1){ //input is not an empty line
+                g_debug("received new line: %s", buffer->str);
                 g_string_assign(active_line, buffer->str);
                 newline=TRUE;
             }
@@ -537,6 +538,7 @@ static int extended_mode_init ( Mode *sw )
 }
 static unsigned int extended_mode_get_num_entries ( const Mode *sw )
 {
+    g_debug("%s", "extended_mode_get_num_entries");
     PageData * pageData = mode_get_private_data_current_page( sw );
     return pageData->lines->len;
 }
@@ -598,7 +600,7 @@ static void extended_mode_destroy ( Mode *sw )
 static char * extended_mode_get_display_value ( const Mode *sw, unsigned int selected_line, int *state, G_GNUC_UNUSED GList **attr_list, int get_entry )
 {
     if(selected_line <= 0){
-        printf("%s\n", "extended_mode_get_display_value");
+        g_debug("%s", "extended_mode_get_display_value");
     }
     PageData * pageData = mode_get_private_data_current_page( sw );
     LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
@@ -610,8 +612,8 @@ static char * extended_mode_get_display_value ( const Mode *sw, unsigned int sel
 
 static int extended_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens, unsigned int selected_line )
 {
-      if(selected_line <= 0){
-        printf("%s\n", "extended_mode_token_match");
+    if(selected_line <= 0){
+        g_debug("%s", "extended_mode_token_match");
     }
     ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = data->currentPageData;
@@ -624,9 +626,7 @@ static int extended_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens
 
 static char * extended_mode_get_message ( const Mode *sw )
 {
-
-    g_debug("%s\n", "extended_mode_get_message");
-    
+    g_debug("%s", "extended_mode_get_message");
     ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = mode_get_private_data_current_page( sw );
     gchar* result = g_strdup_printf("%s",pageData->message->str);
@@ -635,8 +635,7 @@ static char * extended_mode_get_message ( const Mode *sw )
 
 static char * extended_mode_preprocess_input ( Mode *sw, const char *input )
 {
-        printf("%s\n", "extended_mode_preprocess_input");
-    
+    g_debug("%s", "extended_mode_preprocess_input");
     ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = data->currentPageData;
 
