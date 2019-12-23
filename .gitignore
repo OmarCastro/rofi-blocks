@@ -1,5 +1,6 @@
 # http://www.gnu.org/software/automake
 
+build/
 Makefile.in
 /ar-lib
 /mdate-sh
