@@ -135,6 +135,7 @@ void rofi_view_switch_mode ( RofiViewState *state, Mode *mode );
 RofiViewState * rofi_view_get_active ( void );
 extern void rofi_view_set_overlay(RofiViewState * state, const char *text);
 extern void rofi_view_reload ( void );
+const char * rofi_view_get_user_input ( const RofiViewState *state );
 
 /**************
   utils
@@ -183,7 +184,7 @@ pid_t popen2(const char *command, int *infp, int *outfp){
 char *str_replace(const char *orig, const char *rep, const char *with) {
     char *result; // the return string
     char *ins;    // the next insert point
-    char *tmp_orig = (char *) orig; // the next insert point
+    char *remainder; // remainder point
     char *tmp;    // varies
     int len_rep;  // length of rep (the string to remove)
     int len_with; // length of with (the string to replace rep with)
@@ -201,7 +202,7 @@ char *str_replace(const char *orig, const char *rep, const char *with) {
     len_with = strlen(with);
 
     // count the number of replacements needed
-    ins = tmp_orig;
+    ins = remainder = (char *) orig;
     for (count = 0; tmp = strstr(ins, rep); ++count) {
         ins = tmp + len_rep;
     }
@@ -211,19 +212,14 @@ char *str_replace(const char *orig, const char *rep, const char *with) {
     if (!result)
         return NULL;
 
-    // first time through the loop, all the variable are set correctly
-    // from here on,
-    //    tmp points to the end of the result string
-    //    ins points to the next occurrence of rep in orig
-    //    orig points to the remainder of orig after "end of rep"
     while (count--) {
-        ins = strstr(tmp_orig, rep);
-        len_front = ins - tmp_orig;
-        tmp = strncpy(tmp, tmp_orig, len_front) + len_front;
+        ins = strstr(remainder, rep);
+        len_front = ins - remainder;
+        tmp = strncpy(tmp, remainder, len_front) + len_front;
         tmp = strcpy(tmp, with) + len_with;
-        tmp_orig += len_front + len_rep; // move to next "end of rep"
+        remainder += len_front + len_rep; // move to next "end of rep"
     }
-    strcpy(tmp, tmp_orig);
+    strcpy(tmp, remainder);
     return result;
 }
 
@@ -402,6 +398,14 @@ void extended_mode_private_data_send_to_cmd_input ( ExtendedModePrivateData * da
         g_free(format_result);
 }
 
+void extended_mode_verify_input_change ( ExtendedModePrivateData * data, const char * new_input_value){
+    PageData * pageData = data->currentPageData;
+    GString * inputStr = pageData->input;
+    if(data->input_action == InputAction__SEND_ACTION && g_strcmp0(inputStr->str, new_input_value) != 0){
+        g_string_assign(inputStr, new_input_value);
+        extended_mode_private_data_send_to_cmd_input(data, Event__INPUT_CHANGE, new_input_value);
+    }
+}
 
 /**************************
   mode extension methods
@@ -601,6 +605,14 @@ static char * extended_mode_get_display_value ( const Mode *sw, unsigned int sel
 {
     if(selected_line <= 0){
         g_debug("%s", "extended_mode_get_display_value");
+        /**
+         *   Mode._preprocess_input is not called when input is empty,
+         * the only method called when the input changes to empty is this one
+         * that is reason the following 3 lines are added.
+         */
+        RofiViewState * rofiViewState = rofi_view_get_active();
+        ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
+        extended_mode_verify_input_change(data, rofi_view_get_user_input(rofiViewState));
     }
     PageData * pageData = mode_get_private_data_current_page( sw );
     LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
@@ -637,13 +649,7 @@ static char * extended_mode_preprocess_input ( Mode *sw, const char *input )
 {
     g_debug("%s", "extended_mode_preprocess_input");
     ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
-    PageData * pageData = data->currentPageData;
-
-    GString * inputStr = pageData->input;
-    if(data->input_action == InputAction__SEND_ACTION && g_strcmp0(inputStr->str, input) != 0){
-        g_string_assign(inputStr, input);
-        extended_mode_private_data_send_to_cmd_input(data, Event__INPUT_CHANGE, input);
-    }
+    extended_mode_verify_input_change(data, input);
     return g_strdup_printf("%s",input);
 }
 
