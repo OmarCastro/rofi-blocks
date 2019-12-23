@@ -91,7 +91,7 @@ static const char *event_labels[] = {
 
 typedef struct
 {
-    const gchar *text;
+    gchar *text;
     gboolean urgent;
     gboolean highlight;
 } LineData;
@@ -136,6 +136,8 @@ RofiViewState * rofi_view_get_active ( void );
 extern void rofi_view_set_overlay(RofiViewState * state, const char *text);
 extern void rofi_view_reload ( void );
 const char * rofi_view_get_user_input ( const RofiViewState *state );
+void rofi_view_handle_text ( RofiViewState *state, char *text );
+void rofi_view_clear_input ( RofiViewState *state );
 
 /**************
   utils
@@ -288,7 +290,7 @@ void page_data_free(PageData * pageData){
 }
 
 void page_data_add_line(PageData * pageData, const gchar * label, gboolean urgent, gboolean highlight){
-    LineData line = { .text = label, .urgent = urgent, .highlight = highlight };
+    LineData line = { .text = g_strdup_printf("%s",label), .urgent = urgent, .highlight = highlight };
     g_array_append_val(pageData->lines, line);
 }
 
@@ -308,6 +310,12 @@ void page_data_add_line_json_node(PageData * pageData, JsonNode * element){
 }
 
 void page_data_clear_lines(PageData * pageData){
+    GArray * lines = pageData->lines;
+    int i = 0, e = lines->len;
+    for (i = 0; i < e; i++){
+        LineData line = g_array_index (lines, LineData, i);
+        g_free(line.text);
+    }
     g_array_set_size(pageData->lines, 0);
 }
 
@@ -346,6 +354,10 @@ static void extended_mode_private_data_update_prompt(ExtendedModePrivateData * d
     extended_mode_private_data_update_string(data, data->currentPageData->prompt, "prompt");
 }
 
+static void extended_mode_private_data_update_input(ExtendedModePrivateData * data){
+    extended_mode_private_data_update_string(data, data->currentPageData->input, "input");
+}
+
 static void extended_mode_private_data_update_input_format(ExtendedModePrivateData * data){
     extended_mode_private_data_update_string(data, data->input_format, "event format");
 }
@@ -367,7 +379,8 @@ static void extended_mode_private_data_update_lines(ExtendedModePrivateData * da
         for(int index = 0; index < len; ++index){
             page_data_add_line_json_node(pageData, json_array_get_element(lines, index));
         }
-    }}
+    }
+}
 
 static void extended_mode_private_data_update_page(ExtendedModePrivateData * data){
     GError * error = NULL;
@@ -377,8 +390,10 @@ static void extended_mode_private_data_update_page(ExtendedModePrivateData * dat
     extended_mode_private_data_update_input_action(data);
     extended_mode_private_data_update_message(data);
     extended_mode_private_data_update_overlay(data);
+    extended_mode_private_data_update_input(data);
     extended_mode_private_data_update_prompt(data);
     extended_mode_private_data_update_close_on_child_exit(data);
+    extended_mode_private_data_update_input_format(data);
     extended_mode_private_data_update_lines(data);
     
 }
@@ -391,6 +406,7 @@ void extended_mode_private_data_send_to_cmd_input ( ExtendedModePrivateData * da
         format_result = str_replace_in(&format_result, "{{value}}", action_value);
         format_result = str_replace_in_escaped(&format_result, "{{name_escaped}}", event_labels[event]);
         format_result = str_replace_in_escaped(&format_result, "{{value_escaped}}", action_value);
+        g_debug("sending event: %s", format_result);
         gsize bytes_witten;
         g_io_channel_write_chars(cmd_input_channel, format_result, -1, &bytes_witten, &data->error);
         g_io_channel_write_unichar(cmd_input_channel, '\n', &data->error);
@@ -457,11 +473,13 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
     if(newline){
         GString * oldOverlay = g_string_new(data->currentPageData->overlay->str);
         GString * oldPrompt = g_string_new(data->currentPageData->prompt->str);
+        GString * oldInput = g_string_new(data->currentPageData->input->str);
         
         extended_mode_private_data_update_page(data);
         
         GString * newOverlay = data->currentPageData->overlay;
         GString * newPrompt = data->currentPageData->prompt;
+        GString * newInput = data->currentPageData->input;
 
         if(!g_string_equal(oldOverlay, newOverlay)){
             RofiViewState * state = rofi_view_get_active();
@@ -476,8 +494,18 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
             // rofi_view_reload does not update prompt, that is why this is needed
             rofi_view_switch_mode ( state, sw );
         }
+
+        if(!g_string_equal(oldInput, newInput)){
+
+            RofiViewState * rofiViewState = rofi_view_get_active();
+            rofi_view_clear_input(rofiViewState);
+            rofi_view_handle_text(rofiViewState, newInput->str);
+        }
+
+
         g_string_free(oldOverlay, TRUE);
         g_string_free(oldPrompt, TRUE);
+        g_string_free(oldInput, TRUE);
     }
     rofi_view_reload();
 
@@ -603,16 +631,20 @@ static void extended_mode_destroy ( Mode *sw )
 
 static char * extended_mode_get_display_value ( const Mode *sw, unsigned int selected_line, int *state, G_GNUC_UNUSED GList **attr_list, int get_entry )
 {
+
     if(selected_line <= 0){
         g_debug("%s", "extended_mode_get_display_value");
+
         /**
          *   Mode._preprocess_input is not called when input is empty,
          * the only method called when the input changes to empty is this one
          * that is reason the following 3 lines are added.
          */
         RofiViewState * rofiViewState = rofi_view_get_active();
-        ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
-        extended_mode_verify_input_change(data, rofi_view_get_user_input(rofiViewState));
+        if(rofiViewState != NULL){
+            ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
+            extended_mode_verify_input_change(data, rofi_view_get_user_input(rofiViewState));
+        }
     }
     PageData * pageData = mode_get_private_data_current_page( sw );
     LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
