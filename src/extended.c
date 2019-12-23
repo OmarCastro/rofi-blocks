@@ -2,7 +2,7 @@
  * rofi-top
  *
  * MIT/X11 License
- * Copyright (c) 2017 Qball Cow <qball@gmpclient.org>
+ * Copyright (c) 2019 Omar Castro <omar.castro.360@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -23,6 +23,9 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
+#define G_LOG_DOMAIN    "ExtendedMode"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -594,6 +597,9 @@ static void extended_mode_destroy ( Mode *sw )
 
 static char * extended_mode_get_display_value ( const Mode *sw, unsigned int selected_line, int *state, G_GNUC_UNUSED GList **attr_list, int get_entry )
 {
+    if(selected_line <= 0){
+        printf("%s\n", "extended_mode_get_display_value");
+    }
     PageData * pageData = mode_get_private_data_current_page( sw );
     LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
     *state |= 
@@ -604,6 +610,9 @@ static char * extended_mode_get_display_value ( const Mode *sw, unsigned int sel
 
 static int extended_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens, unsigned int selected_line )
 {
+      if(selected_line <= 0){
+        printf("%s\n", "extended_mode_token_match");
+    }
     ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = data->currentPageData;
     switch(data->input_action){
@@ -616,6 +625,8 @@ static int extended_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens
 static char * extended_mode_get_message ( const Mode *sw )
 {
 
+    g_debug("%s\n", "extended_mode_get_message");
+    
     ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = mode_get_private_data_current_page( sw );
     gchar* result = g_strdup_printf("%s",pageData->message->str);
@@ -624,6 +635,8 @@ static char * extended_mode_get_message ( const Mode *sw )
 
 static char * extended_mode_preprocess_input ( Mode *sw, const char *input )
 {
+        printf("%s\n", "extended_mode_preprocess_input");
+    
     ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = data->currentPageData;
 
