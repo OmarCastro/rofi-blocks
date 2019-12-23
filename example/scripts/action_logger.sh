@@ -6,7 +6,7 @@ toLinesJson(){
 	echo "$1" | sed -e 's/\\/\\\\/g' -e 's/\"/\\"/g' -e 's/.*/"&"/' | paste -sd "," -
 }
 
-echo '{	"input action":"send", "prompt": "updating input also logs action" }'
+echo '{"input action":"send", "prompt":"updating input also logs action" }'
 
 log_action(){
 	JSON_LINES="$(toLinesJson "$ACTIONS")"
