@@ -48,15 +48,42 @@ G_MODULE_EXPORT Mode mode;
 const gchar* EXTENDED_SCRIPT_OPTION = "-extended-script-file";
 const gchar* EMPTY_STRING = "";
 
+#define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
+
 typedef enum {
-    SEND_ACTION = 0,
-    FILTER_USING_ROFI = 1,
-    num_of_input_actions = 2
+    InputAction__SEND_ACTION,
+    InputAction__FILTER_USING_ROFI
 } InputAction;
 
-const char *input_action_names[num_of_input_actions] = {
+static const char *input_action_names[] = {
     "send",
-    "filter",
+    "filter"
+};
+
+size_t NUM_OF_INPUT_ACTIONS = NELEMS(input_action_names);
+
+typedef enum {
+    Event__INPUT_CHANGE,
+    Event__USE_CUSTOM_KEY,
+    Event__SELECT_ENTRY, 
+    Event__DELETE_ENTRY, 
+    Event__EXEC_CUSTOM_INPUT
+} Event;
+
+static const char *event_enum_labels[] = {
+    "INPUT_CHANGE",
+    "USE_CUSTOM_KEY",
+    "SELECT_ENTRY", 
+    "DELETE_ENTRY", 
+    "EXEC_CUSTOM_INPUT"
+};
+
+static const char *event_labels[] = {
+    "input change",
+    "custom key",
+    "select entry",
+    "delete entry",
+    "execute custom input"
 };
 
 typedef struct
@@ -299,7 +326,7 @@ static void extended_mode_private_data_update_string(ExtendedModePrivateData * d
 static void extended_mode_private_data_update_input_action(ExtendedModePrivateData * data){
     const gchar* input_action = json_object_get_string_member_or_else(data->root, "input action", NULL);
     if(input_action != NULL){
-        for (int i = 0; i < num_of_input_actions; ++i)
+        for (int i = 0; i < NUM_OF_INPUT_ACTIONS; ++i)
         {
             if(g_strcmp0(input_action, input_action_names[i]) == 0){
                 data->input_action = (InputAction) i;
@@ -357,26 +384,13 @@ static void extended_mode_private_data_update_page(ExtendedModePrivateData * dat
     
 }
 
-void extended_mode_private_data_send_to_cmd_input ( ExtendedModePrivateData * data, const char * action_name, const char * action_value){
+void extended_mode_private_data_send_to_cmd_input ( ExtendedModePrivateData * data, Event event, const char * action_value){
         GIOChannel * cmd_input_channel = data->cmd_input_fd_io_channel;
         const gchar * format = data->input_format->str;
-        gchar * format_result = str_replace(format, "{{name}}", action_name);
+        gchar * format_result = str_replace(format, "{{name}}", event_labels[event]);
+        format_result = str_replace_in(&format_result, "{{name_enum}}", event_enum_labels[event]);
         format_result = str_replace_in(&format_result, "{{value}}", action_value);
-        format_result = str_replace_in_escaped(&format_result, "{{name_escaped}}", action_name);
-        format_result = str_replace_in_escaped(&format_result, "{{value_escaped}}", action_value);
-        gsize bytes_witten;
-        g_io_channel_write_chars(cmd_input_channel, format_result, -1, &bytes_witten, &data->error);
-        g_io_channel_write_unichar(cmd_input_channel, '\n', &data->error);
-        g_io_channel_flush(cmd_input_channel, &data->error);
-        g_free(format_result);
-}
-
-void extended_mode_private_data_send_event_to_cmd_input ( ExtendedModePrivateData * data, const char * action_name, const char * action_value){
-        GIOChannel * cmd_input_channel = data->cmd_input_fd_io_channel;
-        const gchar * format = data->input_format->str;
-        gchar * format_result = str_replace(format, "{{name}}", action_name);
-        format_result = str_replace_in(&format_result, "{{value}}", action_value);
-        format_result = str_replace_in_escaped(&format_result, "{{name_escaped}}", action_name);
+        format_result = str_replace_in_escaped(&format_result, "{{name_escaped}}", event_labels[event]);
         format_result = str_replace_in_escaped(&format_result, "{{value_escaped}}", action_value);
         gsize bytes_witten;
         g_io_channel_write_chars(cmd_input_channel, format_result, -1, &bytes_witten, &data->error);
@@ -488,7 +502,7 @@ static int extended_mode_init ( Mode *sw )
         mode_set_private_data ( sw, (void *) pd );
         pd->currentPageData = page_data_new();
         pd->input_format = g_string_new("{\"name\":\"{{name_escaped}}\", \"value\":\"{{value_escaped}}\"}");
-        pd->input_action = FILTER_USING_ROFI;
+        pd->input_action = InputAction__FILTER_USING_ROFI;
 
         char *cmd = NULL;
         if (find_arg_str(EXTENDED_SCRIPT_OPTION, &cmd)) {
@@ -538,20 +552,20 @@ static ModeMode extended_mode_result ( Mode *sw, int mretv, char **input, unsign
         int custom_key = retv%20;
         char str[8];
         snprintf(str, 8, "%d", 42);
-        extended_mode_private_data_send_to_cmd_input(data, "custom key", str);
+        extended_mode_private_data_send_to_cmd_input(data, Event__USE_CUSTOM_KEY, str);
         retv = RESET_DIALOG;
     } else if ( ( mretv & MENU_OK ) ) {
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
-        extended_mode_private_data_send_to_cmd_input(data, "select entry", lineData->text);
+        extended_mode_private_data_send_to_cmd_input(data, Event__SELECT_ENTRY, lineData->text);
 
         retv = RESET_DIALOG;
     } else if ( ( mretv & MENU_ENTRY_DELETE ) == MENU_ENTRY_DELETE ) {
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
-        extended_mode_private_data_send_to_cmd_input(data, "delete entry", lineData->text);
+        extended_mode_private_data_send_to_cmd_input(data, Event__DELETE_ENTRY, lineData->text);
         retv = RESET_DIALOG;
     }
      else if ( ( mretv & MENU_CUSTOM_INPUT ) ) {
-        extended_mode_private_data_send_to_cmd_input(data, "execute custom input", *input);
+        extended_mode_private_data_send_to_cmd_input(data, Event__EXEC_CUSTOM_INPUT, *input);
         retv = RESET_DIALOG;
     }
     return retv;
@@ -593,7 +607,7 @@ static int extended_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens
     ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = data->currentPageData;
     switch(data->input_action){
-        case SEND_ACTION: return TRUE;
+        case InputAction__SEND_ACTION: return TRUE;
     }
     LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
     return helper_token_match ( tokens, lineData->text);
@@ -614,9 +628,9 @@ static char * extended_mode_preprocess_input ( Mode *sw, const char *input )
     PageData * pageData = data->currentPageData;
 
     GString * inputStr = pageData->input;
-    if(data->input_action == SEND_ACTION && g_strcmp0(inputStr->str, input) != 0){
+    if(data->input_action == InputAction__SEND_ACTION && g_strcmp0(inputStr->str, input) != 0){
         g_string_assign(inputStr, input);
-        extended_mode_private_data_send_to_cmd_input(data, "input action", input);
+        extended_mode_private_data_send_to_cmd_input(data, Event__INPUT_CHANGE, input);
     }
     return g_strdup_printf("%s",input);
 }
