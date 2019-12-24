@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#kills top subproccess on exit
+#kills subproccesses and subshells on exit
 cleanup() {
         local pids=$(jobs -pr)
         [ -n "$pids" ] && kill $pids
@@ -20,7 +20,7 @@ top -c -b | while IFS= read -r line; do
 	while true; do
 		IFS= read -t 0.01 -r line;
 		VAR=$?
-		if ((VAR == 0)); then # read nother line successfully
+		if ((VAR == 0)); then # read another line successfully
 			TOP="$TOP"$'\n'"$line"
 		elif (( VAR > 128 )); then # timeout happened
 			break;
