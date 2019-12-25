@@ -28,6 +28,18 @@ touch $tmp_dir/top
 top_get(){ cat $tmp_dir/top; }
 top_set(){ echo "$1" > $tmp_dir/top; kill -USR1 $$; }
 
+touch $tmp_dir/sort
+sort_column_get(){ cat $tmp_dir/sort; }
+sort_column_set(){ 
+	if [[ "$(sort_column_get)" == "$1 desc" ]];then
+		ORDER="asc"
+	else
+ 		ORDER="desc"
+	fi
+	echo "$1 $ORDER" > $tmp_dir/sort; kill -USR1 $$; 
+}
+echo "%CPU desc" > $tmp_dir/sort
+
 echo '{"event format": "{{name_enum}} {{value}}"}'
 
 IFS=
@@ -89,14 +101,36 @@ getPidInfo(){
 		done
 }
 
+sort_message(){
+	SORT="$(sort_column_get)"
+	case "${SORT#* }" in
+		'asc' ) REPLACEMENT="<b>&</b>";;
+		'desc' ) REPLACEMENT="<b><i>&</i></b>";;
+	esac
+	sed '7s|'"${SORT%% *}"'|'"$REPLACEMENT"'|'
+}
+
+sort_list(){
+	case "$(sort_column_get)" in
+		"PID asc" ) sort -h -k1;;
+		"PID desc" ) sort -h -k1 -r;;
+		"%CPU asc" ) sort -h -k9;;
+		"%CPU desc" ) sort -h -k9 -r;;
+		"%MEM asc" ) sort -h -k10;;
+		"%MEM desc" ) sort -h -k10 -r;;
+		* ) cat
+	esac
+
+}
+
 printNextTick(){
 	SELECTED_PID="$(selected_pid_get)"
 
 	if [[ -z "$SELECTED_PID" ]]; then
 
 		TOP="$(top_get | sed '/./,$!d')"
-		TOP_INFO="$(sed -n '1,/^\s*PID/p' <<< "$TOP")"
-		TOP_PIDLIST="$(sed '1,/^\s*PID/d' <<< "$TOP")"
+		TOP_INFO="$(sed -n '1,/^\s*PID/p' <<< "$TOP" | sort_message)"
+		TOP_PIDLIST="$(sed '1,/^\s*PID/d' <<< "$TOP" | sort_list)"
 		JSON_LINES="$(toLinesJson "$TOP_PIDLIST")"
 		JSON_MESSAGE="$(toStringJson "$TOP_INFO")"
 	else
@@ -124,6 +158,9 @@ trap printNextTick USR1
 
 while read -r line; do
 	case "$line" in
+		"CUSTOM_KEY 1" ) sort_column_set "PID";;
+		"CUSTOM_KEY 2" ) sort_column_set "%CPU";;
+		"CUSTOM_KEY 3" ) sort_column_set "%MEM";;
 		"SELECT_ENTRY return" ) selected_pid_clear;;
 		"SELECT_ENTRY terminate (send SIGTERM signal)" ) kill -s SIGTERM "$(selected_pid_get)"; selected_pid_clear;;
 		"SELECT_ENTRY kill (send SIGKILL signal)" ) kill -s SIGKILL "$(selected_pid_get)"; selected_pid_clear;;
