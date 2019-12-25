@@ -67,7 +67,7 @@ size_t NUM_OF_INPUT_ACTIONS = NELEMS(input_action_names);
 
 typedef enum {
     Event__INPUT_CHANGE,
-    Event__USE_CUSTOM_KEY,
+    Event__CUSTOM_KEY,
     Event__SELECT_ENTRY, 
     Event__DELETE_ENTRY, 
     Event__EXEC_CUSTOM_INPUT
@@ -75,7 +75,7 @@ typedef enum {
 
 static const char *event_enum_labels[] = {
     "INPUT_CHANGE",
-    "USE_CUSTOM_KEY",
+    "CUSTOM_KEY",
     "SELECT_ENTRY", 
     "DELETE_ENTRY", 
     "EXEC_CUSTOM_INPUT"
@@ -586,24 +586,24 @@ static ModeMode extended_mode_result ( Mode *sw, int mretv, char **input, unsign
     } else if ( mretv & MENU_PREVIOUS ) {
         retv = PREVIOUS_DIALOG;
     } else if ( mretv & MENU_QUICK_SWITCH ) {
-        int custom_key = retv%20;
+        retv = ( mretv & MENU_LOWER_MASK );
+        int custom_key = retv%20 + 1;
         char str[8];
-        snprintf(str, 8, "%d", 42);
-        extended_mode_private_data_send_to_cmd_input(data, Event__USE_CUSTOM_KEY, str);
-        retv = RESET_DIALOG;
+        snprintf(str, 8, "%d", custom_key);
+        extended_mode_private_data_send_to_cmd_input(data, Event__CUSTOM_KEY, str);
+        retv = RELOAD_DIALOG;
     } else if ( ( mretv & MENU_OK ) ) {
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
         extended_mode_private_data_send_to_cmd_input(data, Event__SELECT_ENTRY, lineData->text);
-
-        retv = RESET_DIALOG;
+        retv = RELOAD_DIALOG;
     } else if ( ( mretv & MENU_ENTRY_DELETE ) == MENU_ENTRY_DELETE ) {
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
         extended_mode_private_data_send_to_cmd_input(data, Event__DELETE_ENTRY, lineData->text);
-        retv = RESET_DIALOG;
+        retv = RELOAD_DIALOG;
     }
      else if ( ( mretv & MENU_CUSTOM_INPUT ) ) {
         extended_mode_private_data_send_to_cmd_input(data, Event__EXEC_CUSTOM_INPUT, *input);
-        retv = RESET_DIALOG;
+        retv = RELOAD_DIALOG;
     }
     return retv;
 }
