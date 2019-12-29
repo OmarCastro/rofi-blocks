@@ -119,12 +119,12 @@ typedef struct
     
     char *cmd;
     GPid cmd_pid;
-    int cmd_input_fd;
-    int cmd_output_fd;
     gboolean close_on_child_exit;
-    GIOChannel * cmd_input_fd_io_channel;
-    GIOChannel * cmd_output_fd_io_channel;
-    guint cmd_output_fd_io_channel_watcher;
+    GIOChannel * write_channel;
+    GIOChannel * read_channel;
+    int write_channel_fd;
+    int read_channel_fd;
+    guint read_channel_watcher;
 
 
 } ExtendedModePrivateData;
@@ -398,8 +398,8 @@ static void extended_mode_private_data_update_page(ExtendedModePrivateData * dat
     
 }
 
-void extended_mode_private_data_send_to_cmd_input ( ExtendedModePrivateData * data, Event event, const char * action_value){
-        GIOChannel * cmd_input_channel = data->cmd_input_fd_io_channel;
+void extended_mode_private_data_write_to_channel ( ExtendedModePrivateData * data, Event event, const char * action_value){
+        GIOChannel * write_channel = data->write_channel;
         const gchar * format = data->input_format->str;
         gchar * format_result = str_replace(format, "{{name}}", event_labels[event]);
         format_result = str_replace_in(&format_result, "{{name_enum}}", event_enum_labels[event]);
@@ -408,9 +408,9 @@ void extended_mode_private_data_send_to_cmd_input ( ExtendedModePrivateData * da
         format_result = str_replace_in_escaped(&format_result, "{{value_escaped}}", action_value);
         g_debug("sending event: %s", format_result);
         gsize bytes_witten;
-        g_io_channel_write_chars(cmd_input_channel, format_result, -1, &bytes_witten, &data->error);
-        g_io_channel_write_unichar(cmd_input_channel, '\n', &data->error);
-        g_io_channel_flush(cmd_input_channel, &data->error);
+        g_io_channel_write_chars(write_channel, format_result, -1, &bytes_witten, &data->error);
+        g_io_channel_write_unichar(write_channel, '\n', &data->error);
+        g_io_channel_flush(write_channel, &data->error);
         g_free(format_result);
 }
 
@@ -419,7 +419,7 @@ void extended_mode_verify_input_change ( ExtendedModePrivateData * data, const c
     GString * inputStr = pageData->input;
     if(data->input_action == InputAction__SEND_ACTION && g_strcmp0(inputStr->str, new_input_value) != 0){
         g_string_assign(inputStr, new_input_value);
-        extended_mode_private_data_send_to_cmd_input(data, Event__INPUT_CHANGE, new_input_value);
+        extended_mode_private_data_write_to_channel(data, Event__INPUT_CHANGE, new_input_value);
     }
 }
 
@@ -506,8 +506,13 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
         g_string_free(oldOverlay, TRUE);
         g_string_free(oldPrompt, TRUE);
         g_string_free(oldInput, TRUE);
+
+
+        g_debug("reloading rofi view");
+
+        rofi_view_reload();
+
     }
-    rofi_view_reload();
 
     return G_SOURCE_CONTINUE;
 }
@@ -539,30 +544,48 @@ static int extended_mode_init ( Mode *sw )
         pd->currentPageData = page_data_new();
         pd->input_format = g_string_new("{\"name\":\"{{name_escaped}}\", \"value\":\"{{value_escaped}}\"}");
         pd->input_action = InputAction__FILTER_USING_ROFI;
+        pd->close_on_child_exit = TRUE;
+        pd->cmd = NULL;
+        pd->cmd_pid = 0;
+        pd->buffer = g_string_sized_new (1024);
+        pd->active_line = g_string_sized_new (1024);
 
         char *cmd = NULL;
         if (find_arg_str(EXTENDED_SCRIPT_OPTION, &cmd)) {
-            pd->close_on_child_exit = TRUE;
             pd->cmd = g_strdup(cmd);
-            pd->cmd_pid = popen2(pd->cmd, &pd->cmd_input_fd, &pd->cmd_output_fd);
+            int cmd_input_fd;
+            int cmd_output_fd;
+            pd->cmd_pid = popen2(pd->cmd, &cmd_input_fd, &cmd_output_fd);
              if (pd->cmd_pid <= 0){
                 printf("Unable to exec %s\n", cmd);
                 exit(1);
             }
-            int retval = fcntl( pd->cmd_output_fd, F_SETFL, fcntl(pd->cmd_output_fd, F_GETFL) | O_NONBLOCK);
+            pd->read_channel_fd = cmd_output_fd;
+            pd->write_channel_fd = cmd_input_fd;
+
+            int retval = fcntl( pd->read_channel_fd, F_SETFL, fcntl(pd->read_channel_fd, F_GETFL) | O_NONBLOCK);
             if (retval != 0){
                 printf("Error setting non block on output pipe\n");
                 kill(pd->cmd_pid, SIGTERM);
                 exit(1);
             }
-            pd->cmd_input_fd_io_channel = g_io_channel_unix_new(pd->cmd_input_fd);
-            pd->cmd_output_fd_io_channel = g_io_channel_unix_new(pd->cmd_output_fd);
-            pd->cmd_output_fd_io_channel_watcher = g_io_add_watch(pd->cmd_output_fd_io_channel, G_IO_IN, on_new_input, sw);
-
-            pd->buffer = g_string_sized_new (1024);
-            pd->active_line = g_string_sized_new (1024);
+            pd->read_channel = g_io_channel_unix_new(pd->read_channel_fd);
+            pd->write_channel = g_io_channel_unix_new(pd->write_channel_fd);
             g_child_watch_add (pd->cmd_pid, on_child_status, sw);
+
+        } else {
+            int retval = fcntl( STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL) | O_NONBLOCK);
+            if (retval != 0){
+                printf("Error setting non block on input pipe\n");
+                exit(1);
+            }
+
+            pd->read_channel = g_io_channel_unix_new(STDIN_FILENO);
+            pd->write_channel = g_io_channel_unix_new(STDOUT_FILENO);
         }
+
+        pd->read_channel_watcher = g_io_add_watch(pd->read_channel, G_IO_IN, on_new_input, sw);
+
 
         pd->parser = json_parser_new ();
     }
@@ -590,19 +613,19 @@ static ModeMode extended_mode_result ( Mode *sw, int mretv, char **input, unsign
         int custom_key = retv%20 + 1;
         char str[8];
         snprintf(str, 8, "%d", custom_key);
-        extended_mode_private_data_send_to_cmd_input(data, Event__CUSTOM_KEY, str);
+        extended_mode_private_data_write_to_channel(data, Event__CUSTOM_KEY, str);
         retv = RELOAD_DIALOG;
     } else if ( ( mretv & MENU_OK ) ) {
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
-        extended_mode_private_data_send_to_cmd_input(data, Event__SELECT_ENTRY, lineData->text);
+        extended_mode_private_data_write_to_channel(data, Event__SELECT_ENTRY, lineData->text);
         retv = RELOAD_DIALOG;
     } else if ( ( mretv & MENU_ENTRY_DELETE ) == MENU_ENTRY_DELETE ) {
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
-        extended_mode_private_data_send_to_cmd_input(data, Event__DELETE_ENTRY, lineData->text);
+        extended_mode_private_data_write_to_channel(data, Event__DELETE_ENTRY, lineData->text);
         retv = RELOAD_DIALOG;
     }
      else if ( ( mretv & MENU_CUSTOM_INPUT ) ) {
-        extended_mode_private_data_send_to_cmd_input(data, Event__EXEC_CUSTOM_INPUT, *input);
+        extended_mode_private_data_write_to_channel(data, Event__EXEC_CUSTOM_INPUT, *input);
         retv = RELOAD_DIALOG;
     }
     return retv;
@@ -612,16 +635,18 @@ static void extended_mode_destroy ( Mode *sw )
 {
     ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
     if ( data != NULL ) {
-        kill(data->cmd_pid, SIGTERM);
+        if(data->cmd_pid > 0){
+            kill(data->cmd_pid, SIGTERM);
+        }
 
-        g_source_remove ( data->cmd_output_fd_io_channel_watcher );
+        g_source_remove ( data->read_channel_watcher );
 
         g_object_unref ( data->parser );
-        close( data->cmd_input_fd );
-        close( data->cmd_output_fd );
+        close( data->write_channel_fd );
+        close( data->read_channel_fd );
         page_data_free ( data->currentPageData );
-        g_free ( data->cmd_input_fd_io_channel );
-        g_free ( data->cmd_output_fd_io_channel );
+        g_free ( data->write_channel );
+        g_free ( data->read_channel );
         g_free ( data );
         mode_set_private_data ( sw, NULL );
     }
