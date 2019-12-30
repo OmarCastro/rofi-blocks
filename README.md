@@ -1,4 +1,4 @@
-# rofi-block
+# rofi-blocks
 
 Rofi modi that allows controlling rofi content throug communication with an external program
 
