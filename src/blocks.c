@@ -24,7 +24,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#define G_LOG_DOMAIN    "ExtendedMode"
+#define G_LOG_DOMAIN    "BlocksMode"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -46,9 +46,18 @@
 
 #include <stdint.h>
 
+typedef struct RofiViewState RofiViewState;
+void rofi_view_switch_mode ( RofiViewState *state, Mode *mode );
+RofiViewState * rofi_view_get_active ( void );
+extern void rofi_view_set_overlay(RofiViewState * state, const char *text);
+extern void rofi_view_reload ( void );
+const char * rofi_view_get_user_input ( const RofiViewState *state );
+void rofi_view_handle_text ( RofiViewState *state, char *text );
+void rofi_view_clear_input ( RofiViewState *state );
 G_MODULE_EXPORT Mode mode;
 
-const gchar* EXTENDED_SCRIPT_OPTION = "-extended-script-file";
+
+const gchar* BLOCKS_WRAP_CMD_ARG = "-blocks-wrap";
 const gchar* EMPTY_STRING = "";
 
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
@@ -127,17 +136,9 @@ typedef struct
     guint read_channel_watcher;
 
 
-} ExtendedModePrivateData;
+} BlocksModePrivateData;
 
 
-typedef struct RofiViewState RofiViewState;
-void rofi_view_switch_mode ( RofiViewState *state, Mode *mode );
-RofiViewState * rofi_view_get_active ( void );
-extern void rofi_view_set_overlay(RofiViewState * state, const char *text);
-extern void rofi_view_reload ( void );
-const char * rofi_view_get_user_input ( const RofiViewState *state );
-void rofi_view_handle_text ( RofiViewState *state, char *text );
-void rofi_view_clear_input ( RofiViewState *state );
 
 /**************
   utils
@@ -323,14 +324,14 @@ void page_data_clear_lines(PageData * pageData){
   extended mode pirvate data methods
 **************************************/
 
-static void extended_mode_private_data_update_string(ExtendedModePrivateData * data, GString * str, const char * json_root_member){
+static void blocks_mode_private_data_update_string(BlocksModePrivateData * data, GString * str, const char * json_root_member){
     const gchar* memberVal = json_object_get_string_member_or_else(data->root, json_root_member, NULL);
     if(memberVal != NULL){
         g_string_assign(str,memberVal);
     }
 }
 
-static void extended_mode_private_data_update_input_action(ExtendedModePrivateData * data){
+static void blocks_mode_private_data_update_input_action(BlocksModePrivateData * data){
     const gchar* input_action = json_object_get_string_member_or_else(data->root, "input action", NULL);
     if(input_action != NULL){
         for (int i = 0; i < NUM_OF_INPUT_ACTIONS; ++i)
@@ -342,33 +343,33 @@ static void extended_mode_private_data_update_input_action(ExtendedModePrivateDa
     }
 }
 
-static void extended_mode_private_data_update_message(ExtendedModePrivateData * data){
-    extended_mode_private_data_update_string(data, data->currentPageData->message, "message");
+static void blocks_mode_private_data_update_message(BlocksModePrivateData * data){
+    blocks_mode_private_data_update_string(data, data->currentPageData->message, "message");
 }
 
-static void extended_mode_private_data_update_overlay(ExtendedModePrivateData * data){
-    extended_mode_private_data_update_string(data, data->currentPageData->overlay, "overlay");
+static void blocks_mode_private_data_update_overlay(BlocksModePrivateData * data){
+    blocks_mode_private_data_update_string(data, data->currentPageData->overlay, "overlay");
 }
 
-static void extended_mode_private_data_update_prompt(ExtendedModePrivateData * data){
-    extended_mode_private_data_update_string(data, data->currentPageData->prompt, "prompt");
+static void blocks_mode_private_data_update_prompt(BlocksModePrivateData * data){
+    blocks_mode_private_data_update_string(data, data->currentPageData->prompt, "prompt");
 }
 
-static void extended_mode_private_data_update_input(ExtendedModePrivateData * data){
-    extended_mode_private_data_update_string(data, data->currentPageData->input, "input");
+static void blocks_mode_private_data_update_input(BlocksModePrivateData * data){
+    blocks_mode_private_data_update_string(data, data->currentPageData->input, "input");
 }
 
-static void extended_mode_private_data_update_input_format(ExtendedModePrivateData * data){
-    extended_mode_private_data_update_string(data, data->input_format, "event format");
+static void blocks_mode_private_data_update_input_format(BlocksModePrivateData * data){
+    blocks_mode_private_data_update_string(data, data->input_format, "event format");
 }
 
-static void extended_mode_private_data_update_close_on_child_exit(ExtendedModePrivateData * data){
+static void blocks_mode_private_data_update_close_on_child_exit(BlocksModePrivateData * data){
     gboolean orig = data->close_on_child_exit;
     gboolean now = json_object_get_boolean_member_or_else(data->root, "close on exit" , orig);
     data->close_on_child_exit = now;
 }
 
-static void extended_mode_private_data_update_lines(ExtendedModePrivateData * data){
+static void blocks_mode_private_data_update_lines(BlocksModePrivateData * data){
     JsonObject *root = data->root;
     PageData * pageData = data->currentPageData;
     const char * LINES_PROP = "lines";
@@ -382,23 +383,23 @@ static void extended_mode_private_data_update_lines(ExtendedModePrivateData * da
     }
 }
 
-static void extended_mode_private_data_update_page(ExtendedModePrivateData * data){
+static void blocks_mode_private_data_update_page(BlocksModePrivateData * data){
     GError * error = NULL;
     json_parser_load_from_data(data->parser,data->active_line->str,data->active_line->len,&error);
     data->root = json_node_get_object(json_parser_get_root(data->parser));
 
-    extended_mode_private_data_update_input_action(data);
-    extended_mode_private_data_update_message(data);
-    extended_mode_private_data_update_overlay(data);
-    extended_mode_private_data_update_input(data);
-    extended_mode_private_data_update_prompt(data);
-    extended_mode_private_data_update_close_on_child_exit(data);
-    extended_mode_private_data_update_input_format(data);
-    extended_mode_private_data_update_lines(data);
+    blocks_mode_private_data_update_input_action(data);
+    blocks_mode_private_data_update_message(data);
+    blocks_mode_private_data_update_overlay(data);
+    blocks_mode_private_data_update_input(data);
+    blocks_mode_private_data_update_prompt(data);
+    blocks_mode_private_data_update_close_on_child_exit(data);
+    blocks_mode_private_data_update_input_format(data);
+    blocks_mode_private_data_update_lines(data);
     
 }
 
-void extended_mode_private_data_write_to_channel ( ExtendedModePrivateData * data, Event event, const char * action_value){
+void blocks_mode_private_data_write_to_channel ( BlocksModePrivateData * data, Event event, const char * action_value){
         GIOChannel * write_channel = data->write_channel;
         const gchar * format = data->input_format->str;
         gchar * format_result = str_replace(format, "{{name}}", event_labels[event]);
@@ -414,12 +415,12 @@ void extended_mode_private_data_write_to_channel ( ExtendedModePrivateData * dat
         g_free(format_result);
 }
 
-void extended_mode_verify_input_change ( ExtendedModePrivateData * data, const char * new_input_value){
+void blocks_mode_verify_input_change ( BlocksModePrivateData * data, const char * new_input_value){
     PageData * pageData = data->currentPageData;
     GString * inputStr = pageData->input;
     if(data->input_action == InputAction__SEND_ACTION && g_strcmp0(inputStr->str, new_input_value) != 0){
         g_string_assign(inputStr, new_input_value);
-        extended_mode_private_data_write_to_channel(data, Event__INPUT_CHANGE, new_input_value);
+        blocks_mode_private_data_write_to_channel(data, Event__INPUT_CHANGE, new_input_value);
     }
 }
 
@@ -427,8 +428,8 @@ void extended_mode_verify_input_change ( ExtendedModePrivateData * data, const c
   mode extension methods
 **************************/
 
-static ExtendedModePrivateData * mode_get_private_data_extended_mode(const Mode *sw){
-    return (ExtendedModePrivateData *) mode_get_private_data( sw );
+static BlocksModePrivateData * mode_get_private_data_extended_mode(const Mode *sw){
+    return (BlocksModePrivateData *) mode_get_private_data( sw );
 }
 
 static PageData * mode_get_private_data_current_page(const Mode *sw){
@@ -445,7 +446,7 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
     Mode *sw = (Mode *) context;
     RofiViewState * state = rofi_view_get_active();
 
-    ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
 
     GString * buffer = data->buffer;
     GString * active_line = data->active_line;
@@ -475,7 +476,7 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
         GString * oldPrompt = g_string_new(data->currentPageData->prompt->str);
         GString * oldInput = g_string_new(data->currentPageData->input->str);
         
-        extended_mode_private_data_update_page(data);
+        blocks_mode_private_data_update_page(data);
         
         GString * newOverlay = data->currentPageData->overlay;
         GString * newPrompt = data->currentPageData->prompt;
@@ -523,7 +524,7 @@ static void on_child_status (GPid pid, gint status, gpointer context)
     g_message ("Child %" G_PID_FORMAT " exited %s", pid,
         g_spawn_check_exit_status (status, NULL) ? "normally" : "abnormally");
     Mode *sw = (Mode *) context;
-    ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     g_spawn_close_pid (pid);
     if(data->close_on_child_exit){
           exit(0);    
@@ -536,10 +537,10 @@ static void on_child_status (GPid pid, gint status, gpointer context)
 ***********************/
 
 
-static int extended_mode_init ( Mode *sw )
+static int blocks_mode_init ( Mode *sw )
 {
     if ( mode_get_private_data ( sw ) == NULL ) {
-        ExtendedModePrivateData *pd = g_malloc0 ( sizeof ( *pd ) );
+        BlocksModePrivateData *pd = g_malloc0 ( sizeof ( *pd ) );
         mode_set_private_data ( sw, (void *) pd );
         pd->currentPageData = page_data_new();
         pd->input_format = g_string_new("{\"name\":\"{{name_escaped}}\", \"value\":\"{{value_escaped}}\"}");
@@ -551,7 +552,7 @@ static int extended_mode_init ( Mode *sw )
         pd->active_line = g_string_sized_new (1024);
 
         char *cmd = NULL;
-        if (find_arg_str(EXTENDED_SCRIPT_OPTION, &cmd)) {
+        if (find_arg_str(BLOCKS_WRAP_CMD_ARG, &cmd)) {
             pd->cmd = g_strdup(cmd);
             int cmd_input_fd;
             int cmd_output_fd;
@@ -591,17 +592,17 @@ static int extended_mode_init ( Mode *sw )
     }
     return TRUE;
 }
-static unsigned int extended_mode_get_num_entries ( const Mode *sw )
+static unsigned int blocks_mode_get_num_entries ( const Mode *sw )
 {
-    g_debug("%s", "extended_mode_get_num_entries");
+    g_debug("%s", "blocks_mode_get_num_entries");
     PageData * pageData = mode_get_private_data_current_page( sw );
     return pageData->lines->len;
 }
 
-static ModeMode extended_mode_result ( Mode *sw, int mretv, char **input, unsigned int selected_line )
+static ModeMode blocks_mode_result ( Mode *sw, int mretv, char **input, unsigned int selected_line )
 {
     ModeMode           retv  = MODE_EXIT;
-    ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = data->currentPageData;
 
     if ( mretv & MENU_NEXT ) {
@@ -613,27 +614,27 @@ static ModeMode extended_mode_result ( Mode *sw, int mretv, char **input, unsign
         int custom_key = retv%20 + 1;
         char str[8];
         snprintf(str, 8, "%d", custom_key);
-        extended_mode_private_data_write_to_channel(data, Event__CUSTOM_KEY, str);
+        blocks_mode_private_data_write_to_channel(data, Event__CUSTOM_KEY, str);
         retv = RELOAD_DIALOG;
     } else if ( ( mretv & MENU_OK ) ) {
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
-        extended_mode_private_data_write_to_channel(data, Event__SELECT_ENTRY, lineData->text);
+        blocks_mode_private_data_write_to_channel(data, Event__SELECT_ENTRY, lineData->text);
         retv = RELOAD_DIALOG;
     } else if ( ( mretv & MENU_ENTRY_DELETE ) == MENU_ENTRY_DELETE ) {
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
-        extended_mode_private_data_write_to_channel(data, Event__DELETE_ENTRY, lineData->text);
+        blocks_mode_private_data_write_to_channel(data, Event__DELETE_ENTRY, lineData->text);
         retv = RELOAD_DIALOG;
     }
      else if ( ( mretv & MENU_CUSTOM_INPUT ) ) {
-        extended_mode_private_data_write_to_channel(data, Event__EXEC_CUSTOM_INPUT, *input);
+        blocks_mode_private_data_write_to_channel(data, Event__EXEC_CUSTOM_INPUT, *input);
         retv = RELOAD_DIALOG;
     }
     return retv;
 }
 
-static void extended_mode_destroy ( Mode *sw )
+static void blocks_mode_destroy ( Mode *sw )
 {
-    ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     if ( data != NULL ) {
         if(data->cmd_pid > 0){
             kill(data->cmd_pid, SIGTERM);
@@ -652,11 +653,11 @@ static void extended_mode_destroy ( Mode *sw )
 
 
 
-static char * extended_mode_get_display_value ( const Mode *sw, unsigned int selected_line, int *state, G_GNUC_UNUSED GList **attr_list, int get_entry )
+static char * blocks_mode_get_display_value ( const Mode *sw, unsigned int selected_line, int *state, G_GNUC_UNUSED GList **attr_list, int get_entry )
 {
 
     if(selected_line <= 0){
-        g_debug("%s", "extended_mode_get_display_value");
+        g_debug("%s", "blocks_mode_get_display_value");
 
         /**
          *   Mode._preprocess_input is not called when input is empty,
@@ -665,8 +666,8 @@ static char * extended_mode_get_display_value ( const Mode *sw, unsigned int sel
          */
         RofiViewState * rofiViewState = rofi_view_get_active();
         if(rofiViewState != NULL){
-            ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
-            extended_mode_verify_input_change(data, rofi_view_get_user_input(rofiViewState));
+            BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
+            blocks_mode_verify_input_change(data, rofi_view_get_user_input(rofiViewState));
         }
     }
     PageData * pageData = mode_get_private_data_current_page( sw );
@@ -677,12 +678,12 @@ static char * extended_mode_get_display_value ( const Mode *sw, unsigned int sel
     return get_entry ? g_strdup_printf("%s",lineData->text) : NULL;
 }
 
-static int extended_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens, unsigned int selected_line )
+static int blocks_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens, unsigned int selected_line )
 {
     if(selected_line <= 0){
-        g_debug("%s", "extended_mode_token_match");
+        g_debug("%s", "blocks_mode_token_match");
     }
-    ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = data->currentPageData;
     switch(data->input_action){
         case InputAction__SEND_ACTION: return TRUE;
@@ -691,37 +692,37 @@ static int extended_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens
     return helper_token_match ( tokens, lineData->text);
 }
 
-static char * extended_mode_get_message ( const Mode *sw )
+static char * blocks_mode_get_message ( const Mode *sw )
 {
-    g_debug("%s", "extended_mode_get_message");
-    ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    g_debug("%s", "blocks_mode_get_message");
+    BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = mode_get_private_data_current_page( sw );
     gchar* result = g_strdup_printf("%s",pageData->message->str);
     return result;
 }
 
-static char * extended_mode_preprocess_input ( Mode *sw, const char *input )
+static char * blocks_mode_preprocess_input ( Mode *sw, const char *input )
 {
-    g_debug("%s", "extended_mode_preprocess_input");
-    ExtendedModePrivateData *data = mode_get_private_data_extended_mode( sw );
-    extended_mode_verify_input_change(data, input);
+    g_debug("%s", "blocks_mode_preprocess_input");
+    BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    blocks_mode_verify_input_change(data, input);
     return g_strdup_printf("%s",input);
 }
 
 Mode mode =
 {
     .abi_version        = ABI_VERSION,
-    .name               = "extended-script",
-    .cfg_name_key       = "display-extended",
-    ._init              = extended_mode_init,
-    ._get_num_entries   = extended_mode_get_num_entries,
-    ._result            = extended_mode_result,
-    ._destroy           = extended_mode_destroy,
-    ._token_match       = extended_mode_token_match,
-    ._get_display_value = extended_mode_get_display_value,
-    ._get_message       = extended_mode_get_message,
+    .name               = "blocks",
+    .cfg_name_key       = "display-blocks",
+    ._init              = blocks_mode_init,
+    ._get_num_entries   = blocks_mode_get_num_entries,
+    ._result            = blocks_mode_result,
+    ._destroy           = blocks_mode_destroy,
+    ._token_match       = blocks_mode_token_match,
+    ._get_display_value = blocks_mode_get_display_value,
+    ._get_message       = blocks_mode_get_message,
     ._get_completion    = NULL,
-    ._preprocess_input  = extended_mode_preprocess_input,
+    ._preprocess_input  = blocks_mode_preprocess_input,
     .private_data       = NULL,
     .free               = NULL,
 };
