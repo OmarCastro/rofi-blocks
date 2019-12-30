@@ -2,6 +2,4 @@
  
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-rofi -modi extended-script \
-  -show extended-script \
-  -extended-script-file scripts/action_logger.sh "$@"
+rofi -modi blocks -show blocks -blocks-wrap scripts/action_logger.sh "$@"

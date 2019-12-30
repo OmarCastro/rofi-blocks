@@ -32,4 +32,4 @@ execTop(){
 	done
 }
 
-execTop | rofi -modi extended-script -show extended-script "$@"
+execTop | rofi -modi blocks -show blocks "$@"

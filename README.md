@@ -1,4 +1,4 @@
-# rofi-extended-script
+# rofi-block
 
 Rofi modi that allows controlling rofi content throug communication with an external program
 
@@ -7,7 +7,11 @@ To run this you need an up to date checkout of rofi git installed.
 Run rofi like:
 
 ```bash
-rofi -modi extended-script -show extended-script -extended-script-file /path/to/program
+rofi -modi blocks -show blocks
+```
+or
+```bash
+rofi -modi blocks -show blocks -blocks-wrap /path/to/program
 ```
 
 ### Dependencies
@@ -20,7 +24,7 @@ rofi -modi extended-script -show extended-script -extended-script-file /path/to/
 
 ### Installation
 
-**Rofi-extended-script** uses autotools as build system. When installing from git, the following steps should install it:
+**Rofi-blocks** uses autotools as build system. When installing from git, the following steps should install it:
 
 ```bash
 $ autoreconf -i
@@ -47,21 +51,21 @@ This module was created to extend rofi scripting capabilities, such as:
 
 ### Documentation
 
-The module works by executing an application in the background, which will be used to communicate with the extended script plugin. The communication is made using file descriptors. The plugin reads the output of the program and writes events to the input of the program.
+The module works by reading the stdin line by line to update rofi content. It can execute an application in the background, which will be used to communicate with the modi. The communication is made using file descriptors. The modi reads the output of the backgroung program and writes events its input.
 
 #### Communication
 
-This plugin updates rofi each time it reads a line from the program output, and writes an event made from rofi, in most cases is an interaction with the window, as a single line to its input. The format the plugin reads and writes is JSON format.
+This modi updates rofi each time it reads a line from the stdin or background program output, and writes an event made from rofi, in most cases is an interaction with the window, as a single line to stdout or its input. The format used for communication is JSON format.
 
 #### Why JSON:
 
 For the following reasons:
-1. All information can be stored in one line:
+1. All information can be stored in one line
 2. It is simple to write
 
 ##### All information can be stored in one line
 
- New lines on message and text can be escaped with `\n` , this helps the plugin to know when to stop reading and starts parsing the message, preventing cases of the program flushing incomplete lines, and json parser failing due to incomplete messages.
+ New lines on message and text can be escaped with `\n` , this helps the modi to know when to stop reading and starts parsing the message, preventing cases of the program flushing incomplete lines, and json parser failing due to incomplete messages.
 
 ##### It is simple to write
 There is no need to have a library or framework to write json, there are, however, few consideration when transforming text to json string, such as escaping backlashes, newlines and double quotes, something like that can be done with a string replacer, like the `replace()` method in python or `sed` command in bash
@@ -69,7 +73,7 @@ There is no need to have a library or framework to write json, there are, howeve
 
 #### Output JSON format
 
-The JSON format used to communicate the the plugin is the one on the next figure, all fields are optional:
+The JSON format used to communicate with the modi is the one on the next figure, all fields are optional:
 
 ```json
 {
@@ -132,4 +136,4 @@ It contains some text wrapped with double braces {{}}. These wrapped text indica
 
 ### Examples
 
-Additional documentation is created in the form of functional examples, you can compile and install the plugin and execute examples in examples folder to understand and play with the plugin.
+Additional documentation is created in the form of functional examples, you can compile and install the modi and execute examples in examples folder to understand and play with the modi.
