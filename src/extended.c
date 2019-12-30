@@ -638,13 +638,11 @@ static void extended_mode_destroy ( Mode *sw )
         if(data->cmd_pid > 0){
             kill(data->cmd_pid, SIGTERM);
         }
-
         g_source_remove ( data->read_channel_watcher );
-
         g_object_unref ( data->parser );
-        close( data->write_channel_fd );
-        close( data->read_channel_fd );
         page_data_free ( data->currentPageData );
+        close ( data->write_channel_fd );
+        close ( data->read_channel_fd );
         g_free ( data->write_channel );
         g_free ( data->read_channel );
         g_free ( data );
