@@ -291,7 +291,7 @@ void page_data_free(PageData * pageData){
 }
 
 void page_data_add_line(PageData * pageData, const gchar * label, gboolean urgent, gboolean highlight){
-    LineData line = { .text = g_strdup_printf("%s",label), .urgent = urgent, .highlight = highlight };
+    LineData line = { .text = g_strdup(label), .urgent = urgent, .highlight = highlight };
     g_array_append_val(pageData->lines, line);
 }
 
@@ -675,7 +675,7 @@ static char * blocks_mode_get_display_value ( const Mode *sw, unsigned int selec
     *state |= 
         1 * lineData->urgent +
         2 * lineData->highlight;
-    return get_entry ? g_strdup_printf("%s",lineData->text) : NULL;
+    return get_entry ? g_strdup(lineData->text) : NULL;
 }
 
 static int blocks_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens, unsigned int selected_line )
@@ -697,7 +697,7 @@ static char * blocks_mode_get_message ( const Mode *sw )
     g_debug("%s", "blocks_mode_get_message");
     BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = mode_get_private_data_current_page( sw );
-    gchar* result = g_strdup_printf("%s",pageData->message->str);
+    gchar* result = g_strdup(pageData->message->str);
     return result;
 }
 
@@ -706,7 +706,7 @@ static char * blocks_mode_preprocess_input ( Mode *sw, const char *input )
     g_debug("%s", "blocks_mode_preprocess_input");
     BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     blocks_mode_verify_input_change(data, input);
-    return g_strdup_printf("%s",input);
+    return g_strdup(input);
 }
 
 Mode mode =
