@@ -517,13 +517,13 @@ static int blocks_mode_init ( Mode *sw )
             int cmd_output_fd;
             char **argv = NULL;
             if ( !g_shell_parse_argv ( cmd, NULL, &argv, &error ) ){
-                printf("Unable to parse cmdline options: %s\n", error->message);
+                fprintf(stderr, "Unable to parse cmdline options: %s\n", error->message);
                 g_error_free ( error );
                 return 0;
             }
 
             if ( ! g_spawn_async_with_pipes ( NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, &(pd->cmd_pid), &(cmd_input_fd), &(cmd_output_fd), NULL, &error)) {
-                printf("Unable to exec %s\n", error->message);
+                fprintf(stderr, "Unable to exec %s\n", error->message);
                 g_error_free ( error );
                 return 0;
             }
@@ -534,7 +534,8 @@ static int blocks_mode_init ( Mode *sw )
 
             int retval = fcntl( pd->read_channel_fd, F_SETFL, fcntl(pd->read_channel_fd, F_GETFL) | O_NONBLOCK);
             if (retval != 0){
-                printf("Error setting non block on output pipe\n");
+
+                fprintf(stderr,"Error setting non block on output pipe\n");
                 kill(pd->cmd_pid, SIGTERM);
                 exit(1);
             }
@@ -545,10 +546,9 @@ static int blocks_mode_init ( Mode *sw )
         } else {
             int retval = fcntl( STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL) | O_NONBLOCK);
             if (retval != 0){
-                printf("Error setting non block on input pipe\n");
+                fprintf(stderr,"Error setting non block on output pipe\n");
                 exit(1);
             }
-
             pd->read_channel = g_io_channel_unix_new(STDIN_FILENO);
             pd->write_channel = g_io_channel_unix_new(STDOUT_FILENO);
         }
