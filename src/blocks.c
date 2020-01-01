@@ -126,7 +126,6 @@ typedef struct
     GString * active_line;
     GString * buffer;
     
-    char *cmd;
     GPid cmd_pid;
     gboolean close_on_child_exit;
     GIOChannel * write_channel;
@@ -143,45 +142,6 @@ typedef struct
 /**************
   utils
 ***************/
-
-
-pid_t popen2(const char *command, int *infp, int *outfp){
-
-    const short READ = 0;
-    const short WRITE = 1;
-    int p_stdin[2], p_stdout[2];
-    pid_t pid;
-    if (pipe(p_stdin) != 0 || pipe(p_stdout) != 0)
-        return -1;
-
-    pid = fork();
-
-    if (pid < 0)
-        return pid;
-
-    else if (pid == 0)
-    {
-        close(p_stdin[WRITE]);
-        dup2(p_stdin[READ], READ);
-        close(p_stdout[READ]);
-        dup2(p_stdout[WRITE], WRITE);
-        execl(command, NULL);
-        printf("{\"close on exit\": false, \"message\":\"Error loading %s:%s\"}\n", command, strerror(errno));
-        perror("execl");
-        exit(1);
-    }
-
-    if (infp == NULL)
-        close(p_stdin[WRITE]);
-    else
-        *infp = p_stdin[WRITE];
-    if (outfp == NULL)
-        close(p_stdout[READ]);
-    else
-        *outfp = p_stdout[READ];
-    return pid;
-
-}
 
 // Result is an allocated a new string
 char *str_replace(const char *orig, const char *rep, const char *with) {
@@ -546,21 +506,29 @@ static int blocks_mode_init ( Mode *sw )
         pd->input_format = g_string_new("{\"name\":\"{{name_escaped}}\", \"value\":\"{{value_escaped}}\"}");
         pd->input_action = InputAction__FILTER_USING_ROFI;
         pd->close_on_child_exit = TRUE;
-        pd->cmd = NULL;
         pd->cmd_pid = 0;
         pd->buffer = g_string_sized_new (1024);
         pd->active_line = g_string_sized_new (1024);
 
         char *cmd = NULL;
         if (find_arg_str(BLOCKS_WRAP_CMD_ARG, &cmd)) {
-            pd->cmd = g_strdup(cmd);
+            GError *error = NULL;
             int cmd_input_fd;
             int cmd_output_fd;
-            pd->cmd_pid = popen2(pd->cmd, &cmd_input_fd, &cmd_output_fd);
-             if (pd->cmd_pid <= 0){
-                printf("Unable to exec %s\n", cmd);
-                exit(1);
+            char **argv = NULL;
+            if ( !g_shell_parse_argv ( cmd, NULL, &argv, &error ) ){
+                printf("Unable to parse cmdline options: %s\n", error->message);
+                g_error_free ( error );
+                return 0;
             }
+
+            if ( ! g_spawn_async_with_pipes ( NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, &(pd->cmd_pid), &(cmd_input_fd), &(cmd_output_fd), NULL, &error)) {
+                printf("Unable to exec %s\n", error->message);
+                g_error_free ( error );
+                return 0;
+            }
+            g_strfreev(argv);
+
             pd->read_channel_fd = cmd_output_fd;
             pd->write_channel_fd = cmd_input_fd;
 
@@ -639,8 +607,12 @@ static void blocks_mode_destroy ( Mode *sw )
         if(data->cmd_pid > 0){
             kill(data->cmd_pid, SIGTERM);
         }
-        g_source_remove ( data->read_channel_watcher );
-        g_object_unref ( data->parser );
+        if ( data->read_channel_watcher > 0 ) {
+            g_source_remove ( data->read_channel_watcher );
+        }
+        if ( data->parser ) {
+            g_object_unref ( data->parser );
+        }
         page_data_free ( data->currentPageData );
         close ( data->write_channel_fd );
         close ( data->read_channel_fd );
