@@ -138,7 +138,6 @@ typedef struct
 } BlocksModePrivateData;
 
 
-
 /**************
   utils
 ***************/
@@ -201,6 +200,45 @@ char *str_replace_in_escaped(char **orig, const char *rep, const char *with) {
     g_free((char *) escaped_with);
     return result;
 }
+
+pid_t popen2(const char *command, int *infp, int *outfp){
+
+    const short READ = 0;
+    const short WRITE = 1;
+    int p_stdin[2], p_stdout[2];
+    pid_t pid;
+    if (pipe(p_stdin) != 0 || pipe(p_stdout) != 0)
+        return -1;
+
+    pid = fork();
+
+    if (pid < 0)
+        return pid;
+
+    else if (pid == 0)
+    {
+        close(p_stdin[WRITE]);
+        dup2(p_stdin[READ], READ);
+        close(p_stdout[READ]);
+        dup2(p_stdout[WRITE], WRITE);
+        execl(command, NULL);
+        printf("{\"close on exit\": false, \"message\":\"Error loading %s:%s\"}\n", command, strerror(errno));
+        perror("execl");
+        exit(1);
+    }
+
+    if (infp == NULL)
+        close(p_stdin[WRITE]);
+    else
+        *infp = p_stdin[WRITE];
+    if (outfp == NULL)
+        close(p_stdout[READ]);
+    else
+        *outfp = p_stdout[READ];
+    return pid;
+
+}
+
 
 /*************************
   json glib extensions
@@ -522,10 +560,10 @@ static int blocks_mode_init ( Mode *sw )
                 return 0;
             }
 
-            if ( ! g_spawn_async_with_pipes ( NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, &(pd->cmd_pid), &(cmd_input_fd), &(cmd_output_fd), NULL, &error)) {
-                fprintf(stderr, "Unable to exec %s\n", error->message);
-                g_error_free ( error );
-                return 0;
+            pd->cmd_pid = popen2(cmd, &cmd_input_fd, &cmd_output_fd);
+            if (pd->cmd_pid <= 0){
+                fprintf(stderr,"Unable to exec %s\n", cmd);
+                exit(1);
             }
             g_strfreev(argv);
 
