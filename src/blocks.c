@@ -285,6 +285,7 @@ void page_data_free(PageData * pageData){
     g_string_free(pageData->overlay, TRUE);
     g_string_free(pageData->prompt, TRUE);
     g_string_free(pageData->input, TRUE);
+    g_array_free (pageData->lines, TRUE);
     g_free(pageData);
 }
 
@@ -310,8 +311,8 @@ void page_data_add_line_json_node(PageData * pageData, JsonNode * element){
 
 void page_data_clear_lines(PageData * pageData){
     GArray * lines = pageData->lines;
-    int i = 0, e = lines->len;
-    for (i = 0; i < e; i++){
+    int lines_length = lines->len;
+    for (int i = 0; i < lines_length; i++){
         LineData line = g_array_index (lines, LineData, i);
         g_free(line.text);
     }
