@@ -57,7 +57,9 @@ void rofi_view_clear_input ( RofiViewState *state );
 G_MODULE_EXPORT Mode mode;
 
 
-const gchar* BLOCKS_WRAP_CMD_ARG = "-blocks-wrap";
+const gchar* CmdArg__BLOCKS_WRAP = "-blocks-wrap";
+const gchar* CmdArg__MARKUP_ROWS = "-markup-rows";
+
 const gchar* EMPTY_STRING = "";
 
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
@@ -103,10 +105,12 @@ typedef struct
     gchar *text;
     gboolean urgent;
     gboolean highlight;
+    gboolean markup;
 } LineData;
 
 typedef struct
 {
+    gboolean markup_default;
     GString *message;
     GString *overlay;
     GString *prompt;
@@ -272,6 +276,7 @@ const gchar * json_object_get_string_member_or_else(JsonObject * node, const gch
 
 PageData * page_data_new(){
     PageData * pageData = g_malloc0( sizeof ( *pageData ) );
+    pageData->markup_default = find_arg(CmdArg__MARKUP_ROWS) ? TRUE : FALSE;
     pageData->message = g_string_sized_new(256);
     pageData->overlay = g_string_sized_new(64);
     pageData->prompt = g_string_sized_new(64);
@@ -289,23 +294,25 @@ void page_data_free(PageData * pageData){
     g_free(pageData);
 }
 
-void page_data_add_line(PageData * pageData, const gchar * label, gboolean urgent, gboolean highlight){
-    LineData line = { .text = g_strdup(label), .urgent = urgent, .highlight = highlight };
+void page_data_add_line(PageData * pageData, const gchar * label, gboolean urgent, gboolean highlight, gboolean markup){
+    LineData line = { .text = g_strdup(label), .urgent = urgent, .highlight = highlight, .markup = markup };
     g_array_append_val(pageData->lines, line);
 }
 
 void page_data_add_line_json_node(PageData * pageData, JsonNode * element){
     if(JSON_NODE_HOLDS_VALUE(element) && json_node_get_value_type(element) == G_TYPE_STRING){
-        page_data_add_line(pageData, json_node_get_string(element), FALSE, FALSE);
+        page_data_add_line(pageData, json_node_get_string(element), FALSE, FALSE, pageData->markup_default);
     } else if(JSON_NODE_HOLDS_OBJECT(element)){
         JsonObject * line_obj = json_node_get_object(element);
         JsonNode * text_node = json_object_get_member(line_obj, "text");
         JsonNode * urgent_node = json_object_get_member(line_obj, "urgent");
         JsonNode * highlight_node = json_object_get_member(line_obj, "highlight");
+        JsonNode * markup_node = json_object_get_member(line_obj, "markup");
         const gchar * text = json_node_get_string_or_else(text_node, EMPTY_STRING);
         gboolean urgent = json_node_get_boolean_or_else(urgent_node, FALSE);
         gboolean highlight = json_node_get_boolean_or_else(highlight_node, FALSE);
-        page_data_add_line(pageData, text, urgent, highlight);
+        gboolean markup = json_node_get_boolean_or_else(highlight_node, pageData->markup_default);
+        page_data_add_line(pageData, text, urgent, highlight, markup);
     }
 }
 
@@ -548,9 +555,8 @@ static int blocks_mode_init ( Mode *sw )
         pd->cmd_pid = 0;
         pd->buffer = g_string_sized_new (1024);
         pd->active_line = g_string_sized_new (1024);
-
         char *cmd = NULL;
-        if (find_arg_str(BLOCKS_WRAP_CMD_ARG, &cmd)) {
+        if (find_arg_str(CmdArg__BLOCKS_WRAP, &cmd)) {
             GError *error = NULL;
             int cmd_input_fd;
             int cmd_output_fd;
@@ -685,7 +691,8 @@ static char * blocks_mode_get_display_value ( const Mode *sw, unsigned int selec
     LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
     *state |= 
         1 * lineData->urgent +
-        2 * lineData->highlight;
+        2 * lineData->highlight +
+        8 * lineData->markup;
     return get_entry ? g_strdup(lineData->text) : NULL;
 }
 
