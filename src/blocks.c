@@ -276,7 +276,7 @@ const gchar * json_object_get_string_member_or_else(JsonObject * node, const gch
 
 PageData * page_data_new(){
     PageData * pageData = g_malloc0( sizeof ( *pageData ) );
-    pageData->markup_default = find_arg(CmdArg__MARKUP_ROWS) ? TRUE : FALSE;
+    pageData->markup_default = find_arg(CmdArg__MARKUP_ROWS) >= 0 ? TRUE : FALSE;
     pageData->message = g_string_sized_new(256);
     pageData->overlay = g_string_sized_new(64);
     pageData->prompt = g_string_sized_new(64);
@@ -311,7 +311,7 @@ void page_data_add_line_json_node(PageData * pageData, JsonNode * element){
         const gchar * text = json_node_get_string_or_else(text_node, EMPTY_STRING);
         gboolean urgent = json_node_get_boolean_or_else(urgent_node, FALSE);
         gboolean highlight = json_node_get_boolean_or_else(highlight_node, FALSE);
-        gboolean markup = json_node_get_boolean_or_else(highlight_node, pageData->markup_default);
+        gboolean markup = json_node_get_boolean_or_else(markup_node, pageData->markup_default);
         page_data_add_line(pageData, text, urgent, highlight, markup);
     }
 }
