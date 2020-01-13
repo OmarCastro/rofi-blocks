@@ -88,7 +88,8 @@ The JSON format used to communicate with the modi is the one on the next figure,
     {"text":"can be a string or object"}, 
     {"text":"with object, you can use flags", "urgent":true},
     {"text":"such as urgent and highlight", "highlight": true},
-    {"text":"or both", "urgent":true, "highlight": true}
+    {"text":"as well as markup", "markup": true},
+    {"text":"or both", "urgent":true, "highlight": true, "markup":true}
   ]
 }
 ```

@@ -2,6 +2,7 @@
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
+toggleMarkup="true"
 while printf ''; do
  	TEXT=$(cat <<EOF | sed 's/\\/\\\\/g' | tr -d "\n" | tr -d "\t"
 {
@@ -14,7 +15,10 @@ while printf ''; do
 		{"text":"json object"}, 
 		{"text":"json with urgent flag", "urgent":true},
 		{"text":"json with highlight flag", "highlight": true},
-		{"text":"json with both flag", "urgent":true, "highlight": true}
+		{"text":"json <i>with</i> <b>markup</b> <b><i>flag</i></b>", "markup": true},
+		{"text":"json <i>toggling</i> <b>markup</b> flag", "markup": $toggleMarkup},
+		{"text":"json <i>without</i> <b>markup</b> <b><i>flag</i></b>", "markup": false},
+		{"text":"json with <b><i>all</i></b> flags", "urgent":true, "highlight": true, "markup": true}
 	]}
 EOF
 )
@@ -23,5 +27,6 @@ EOF
 		exit 1;
 	fi
  	sleep 1;
+ 	if [ "$toggleMarkup" = "true" ]; then toggleMarkup="false"; else toggleMarkup="true"; fi
 
 done | rofi -modi blocks -show blocks "$@"
