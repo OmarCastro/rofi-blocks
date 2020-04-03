@@ -146,6 +146,45 @@ typedef struct
   utils
 ***************/
 
+void json_escape(char *in, char *out) {
+    while (*in) {
+        switch (*in) {
+        case '\\':
+            *(out++) = '\\';
+            *(out++) = *in;
+            break;
+        case '"':
+            *(out++) = '\\';
+            *(out++) = '"';
+            break;
+        case '\t':
+            *(out++) = '\\';
+            *(out++) = 't';
+            break;
+        case '\r':
+            *(out++) = '\\';
+            *(out++) = 'r';
+            break;
+        case '\f':
+            *(out++) = '\\';
+            *(out++) = 'f';
+            break;
+        case '\b':
+            *(out++) = '\\';
+            *(out++) = 'b';
+            break;
+        case '\n':
+            *(out++) = '\\';
+            *(out++) = 'n';
+            break;
+        default:
+            *(out++) = *in;
+            break;
+        }
+        in++;
+    }
+}
+
 // Result is an allocated a new string
 char *str_replace(const char *orig, const char *rep, const char *with) {
     char *result; // the return string
@@ -199,7 +238,12 @@ char *str_replace_in(char **orig, const char *rep, const char *with) {
 }
 
 char *str_replace_in_escaped(char **orig, const char *rep, const char *with) {
-    const gchar * escaped_with = g_strescape(with, NULL);
+    int len = strlen(with);
+
+    gchar * escaped_with = NULL;
+    escaped_with = (char*)calloc(len*2, sizeof(gchar));
+
+    json_escape(with, escaped_with);
     char * result = str_replace_in(orig, rep, escaped_with);
     g_free((char *) escaped_with);
     return result;
