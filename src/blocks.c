@@ -460,12 +460,14 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
     gboolean newline = FALSE;
 
     GError * error = NULL;
-    gchar unichar;
-    gsize bytes_read;
+    gunichar unichar;
+    GIOStatus status;
 
-    g_io_channel_read_chars(source, &unichar, 1, &bytes_read, &error);
-    while(bytes_read > 0) {
-        g_string_append_c(buffer, unichar);
+    status = g_io_channel_read_unichar(source, &unichar, &error);
+
+    //when there is nothing to read, status is G_IO_STATUS_AGAIN
+    while(status == G_IO_STATUS_NORMAL) {
+        g_string_append_unichar(buffer, unichar);
         if( unichar == '\n' ){
             if(buffer->len > 1){ //input is not an empty line
                 g_debug("received new line: %s", buffer->str);
@@ -474,7 +476,7 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
             }
             g_string_set_size(buffer, 0);
         }
-        g_io_channel_read_chars(source, &unichar, 1, &bytes_read, &error);
+        status = g_io_channel_read_unichar(source, &unichar, &error);
     }
 
     if(newline){
