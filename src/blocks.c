@@ -146,7 +146,7 @@ typedef struct
   utils
 ***************/
 
-void json_escape(char *in, char *out) {
+void json_escape(const char *in, char *out) {
     while (*in) {
         switch (*in) {
         case '\\':

@@ -16,6 +16,7 @@ while printf ''; do
 		{"text":"json with urgent flag", "urgent":true},
 		{"text":"json with highlight flag", "highlight": true},
         {"text":"multi-byte unicode: •"},
+        {"text":"icon unicode character: 😀"},
 		{"text":"json <i>with</i> <b>markup</b> <b><i>flag</i></b>", "markup": true},
 		{"text":"json <i>toggling</i> <b>markup</b> flag", "markup": $toggleMarkup},
 		{"text":"json <i>without</i> <b>markup</b> <b><i>flag</i></b>", "markup": false},
