@@ -84,6 +84,7 @@ size_t NUM_OF_INPUT_ACTIONS = NELEMS(input_action_names);
 typedef enum {
     Event__INPUT_CHANGE,
     Event__CUSTOM_KEY,
+    Event__ACTIVE_ENTRY,
     Event__SELECT_ENTRY, 
     Event__DELETE_ENTRY, 
     Event__EXEC_CUSTOM_INPUT
@@ -92,6 +93,7 @@ typedef enum {
 static const char *event_enum_labels[] = {
     "INPUT_CHANGE",
     "CUSTOM_KEY",
+    "ACTIVE_ENTRY", 
     "SELECT_ENTRY", 
     "DELETE_ENTRY", 
     "EXEC_CUSTOM_INPUT"
@@ -100,6 +102,7 @@ static const char *event_enum_labels[] = {
 static const char *event_labels[] = {
     "input change",
     "custom key",
+    "active entry",
     "select entry",
     "delete entry",
     "execute custom input"
@@ -550,7 +553,11 @@ static ModeMode blocks_mode_result ( Mode *sw, int mretv, char **input, unsigned
         int custom_key = retv%20 + 1;
         char str[8];
         snprintf(str, 8, "%d", custom_key);
+
+        LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
+        blocks_mode_private_data_write_to_channel(data, Event__ACTIVE_ENTRY, lineData->text);
         blocks_mode_private_data_write_to_channel(data, Event__CUSTOM_KEY, str);
+
         retv = RELOAD_DIALOG;
     } else if ( ( mretv & MENU_OK ) ) {
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
@@ -560,8 +567,7 @@ static ModeMode blocks_mode_result ( Mode *sw, int mretv, char **input, unsigned
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
         blocks_mode_private_data_write_to_channel(data, Event__DELETE_ENTRY, lineData->text);
         retv = RELOAD_DIALOG;
-    }
-     else if ( ( mretv & MENU_CUSTOM_INPUT ) ) {
+    } else if ( ( mretv & MENU_CUSTOM_INPUT ) ) {
         blocks_mode_private_data_write_to_channel(data, Event__EXEC_CUSTOM_INPUT, *input);
         retv = RELOAD_DIALOG;
     }
