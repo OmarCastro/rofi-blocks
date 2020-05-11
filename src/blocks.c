@@ -1,5 +1,5 @@
 /**
- * rofi-top
+ * rofi-blocks
  *
  * MIT/X11 License
  * Copyright (c) 2019 Omar Castro <omar.castro.360@gmail.com>
@@ -46,12 +46,17 @@
 
 #include <stdint.h>
 
+#include "string_utils.h"
+#include "json_glib_extensions.h"
+
 typedef struct RofiViewState RofiViewState;
 void rofi_view_switch_mode ( RofiViewState *state, Mode *mode );
 RofiViewState * rofi_view_get_active ( void );
 extern void rofi_view_set_overlay(RofiViewState * state, const char *text);
 extern void rofi_view_reload ( void );
 const char * rofi_view_get_user_input ( const RofiViewState *state );
+unsigned int rofi_view_get_selected_line ( const RofiViewState *state );
+unsigned int rofi_view_get_next_position ( const RofiViewState *state );
 void rofi_view_handle_text ( RofiViewState *state, char *text );
 void rofi_view_clear_input ( RofiViewState *state );
 G_MODULE_EXPORT Mode mode;
@@ -146,108 +151,6 @@ typedef struct
   utils
 ***************/
 
-void json_escape(const char *in, char *out) {
-    while (*in) {
-        switch (*in) {
-        case '\\':
-            *(out++) = '\\';
-            *(out++) = *in;
-            break;
-        case '"':
-            *(out++) = '\\';
-            *(out++) = '"';
-            break;
-        case '\t':
-            *(out++) = '\\';
-            *(out++) = 't';
-            break;
-        case '\r':
-            *(out++) = '\\';
-            *(out++) = 'r';
-            break;
-        case '\f':
-            *(out++) = '\\';
-            *(out++) = 'f';
-            break;
-        case '\b':
-            *(out++) = '\\';
-            *(out++) = 'b';
-            break;
-        case '\n':
-            *(out++) = '\\';
-            *(out++) = 'n';
-            break;
-        default:
-            *(out++) = *in;
-            break;
-        }
-        in++;
-    }
-}
-
-// Result is an allocated a new string
-char *str_replace(const char *orig, const char *rep, const char *with) {
-    char *result; // the return string
-    char *ins;    // the next insert point
-    char *remainder; // remainder point
-    char *tmp;    // varies
-    int len_rep;  // length of rep (the string to remove)
-    int len_with; // length of with (the string to replace rep with)
-    int len_front; // distance between rep and end of last rep
-    int count;    // number of replacements
-
-    // sanity checks and initialization
-    if (!orig || !rep)
-        return NULL;
-    len_rep = strlen(rep);
-    if (len_rep == 0)
-        return NULL; // empty rep causes infinite loop during count
-    if (!with)
-        with = "";
-    len_with = strlen(with);
-
-    // count the number of replacements needed
-    ins = remainder = (char *) orig;
-    for (count = 0; tmp = strstr(ins, rep); ++count) {
-        ins = tmp + len_rep;
-    }
-
-    tmp = result = malloc(strlen(orig) + (len_with - len_rep) * count + 1);
-
-    if (!result)
-        return NULL;
-
-    while (count--) {
-        ins = strstr(remainder, rep);
-        len_front = ins - remainder;
-        tmp = strncpy(tmp, remainder, len_front) + len_front;
-        tmp = strcpy(tmp, with) + len_with;
-        remainder += len_front + len_rep; // move to next "end of rep"
-    }
-    strcpy(tmp, remainder);
-    return result;
-}
-
-char *str_replace_in(char **orig, const char *rep, const char *with) {
-    char * result = str_replace(*orig, rep, with);
-    if( result != NULL ){
-        free(*orig);
-        *orig = result;
-    }
-    return *orig;
-}
-
-char *str_replace_in_escaped(char **orig, const char *rep, const char *with) {
-    int len = strlen(with);
-
-    gchar * escaped_with = NULL;
-    escaped_with = (char*)calloc(len*2, sizeof(gchar));
-
-    json_escape(with, escaped_with);
-    char * result = str_replace_in(orig, rep, escaped_with);
-    g_free((char *) escaped_with);
-    return result;
-}
 
 pid_t popen2(const char *command, int *infp, int *outfp){
 
@@ -269,7 +172,7 @@ pid_t popen2(const char *command, int *infp, int *outfp){
         dup2(p_stdin[READ], READ);
         close(p_stdout[READ]);
         dup2(p_stdout[WRITE], WRITE);
-        execl(command, NULL);
+        execl(command, (char *) NULL);
         printf("{\"close on exit\": false, \"message\":\"Error loading %s:%s\"}\n", command, strerror(errno));
         perror("execl");
         exit(1);
@@ -285,32 +188,6 @@ pid_t popen2(const char *command, int *infp, int *outfp){
         *outfp = p_stdout[READ];
     return pid;
 
-}
-
-
-/*************************
-  json glib extensions
-**************************/
-
-gboolean json_node_get_boolean_or_else(JsonNode * node, gboolean else_value){
-    return node != NULL &&
-           json_node_get_value_type(node) == G_TYPE_BOOLEAN ?
-           json_node_get_boolean(node) : else_value;
-}
-
-const gchar * json_node_get_string_or_else(JsonNode * node, const gchar * else_value){
-    return node != NULL &&
-           json_node_get_value_type(node) == G_TYPE_STRING ?
-           json_node_get_string(node) : else_value;
-}
-
-
-gboolean json_object_get_boolean_member_or_else(JsonObject * node, const gchar * member, gboolean else_value){
-    return json_node_get_boolean_or_else(json_object_get_member(node, member), else_value);
-}
-
-const gchar * json_object_get_string_member_or_else(JsonObject * node, const gchar * member, const gchar * else_value){
-    return json_node_get_string_or_else(json_object_get_member(node, member), else_value);
 }
 
 
@@ -719,6 +596,20 @@ static void blocks_mode_destroy ( Mode *sw )
 static char * blocks_mode_get_display_value ( const Mode *sw, unsigned int selected_line, int *state, G_GNUC_UNUSED GList **attr_list, int get_entry )
 {
 
+
+    PageData * pageData = mode_get_private_data_current_page( sw );
+     g_debug("aaa %i %i", selected_line, pageData->lines->len);
+
+    if(selected_line >= pageData->lines->len){
+        return get_entry ? g_strdup("") : NULL;
+    }
+
+    LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
+
+
+    RofiViewState * rofiViewState = rofi_view_get_active();
+
+
     if(selected_line <= 0){
         g_debug("%s", "blocks_mode_get_display_value");
 
@@ -727,14 +618,15 @@ static char * blocks_mode_get_display_value ( const Mode *sw, unsigned int selec
          * the only method called when the input changes to empty is this one
          * that is reason the following 3 lines are added.
          */
-        RofiViewState * rofiViewState = rofi_view_get_active();
         if(rofiViewState != NULL){
             BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
             blocks_mode_verify_input_change(data, rofi_view_get_user_input(rofiViewState));
+            g_debug("%s %i", "blocks_mode_get_display_value.selected line", rofi_view_get_selected_line(rofiViewState));
+            g_debug("%s %i", "blocks_mode_get_display_value.active line", rofi_view_get_next_position(rofiViewState));
+
+
         }
     }
-    PageData * pageData = mode_get_private_data_current_page( sw );
-    LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
     *state |= 
         1 * lineData->urgent +
         2 * lineData->highlight +
@@ -749,8 +641,8 @@ static int blocks_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens, 
     }
     BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = data->currentPageData;
-    switch(data->input_action){
-        case InputAction__SEND_ACTION: return TRUE;
+    if(data->input_action == InputAction__SEND_ACTION){
+        return TRUE;
     }
     LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
     return helper_token_match ( tokens, lineData->text);
