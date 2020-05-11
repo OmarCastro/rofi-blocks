@@ -130,6 +130,7 @@ It contains some text wrapped with double braces {{}}. These wrapped text indica
 |------------------------|--------------------|-----------------------------------------------------------|
 | input change           | INPUT_CHANGE       | sent when input changes and input action is set to `send` |
 | custom key             | CUSTOM_KEY         | sent when a custom key is typed                           |
+| active entry           | ACTIVE_ENTRY       | sent before `custom key` event is emitted                 |
 | select entry           | SELECT_ENTRY       | sent when selecting an entry on the list                  |
 | delete entry           | DELETE_ENTRY       | sent when deleting an entry on the list                   |
 | execute custom input   | EXEC_CUSTOM_INPUT  | sent when a custom input is to be executed                |
