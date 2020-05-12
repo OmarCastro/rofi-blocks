@@ -113,7 +113,10 @@ char *str_replace_in_escaped(char **orig, const char *rep, const char *with) {
 }
 
 
-//private methods
+/******
+  private method definitions
+******/
+
 
 static void str_escape_for_json_string(const char *in, char *out) {
     while (*in) {

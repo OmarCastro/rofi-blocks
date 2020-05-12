@@ -145,6 +145,7 @@ typedef struct
     int write_channel_fd;
     int read_channel_fd;
     guint read_channel_watcher;
+    gboolean waiting_for_idle;
 
 
 } BlocksModePrivateData;
@@ -463,6 +464,38 @@ static void on_child_status (GPid pid, gint status, gpointer context)
     }
 }
 
+// idle, called after rendering
+static void on_render(gpointer context){
+    g_debug("%s", "calling on_render");
+
+    Mode *sw = (Mode *) context;
+    BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    RofiViewState * rofiViewState = rofi_view_get_active();
+
+    /**
+     *   Mode._preprocess_input is not called when input is empty,
+     * the only method called when the input changes to empty is this one
+     * that is reason the following 3 lines are added.
+     */
+    if(rofiViewState != NULL){
+        blocks_mode_verify_input_change(data, rofi_view_get_user_input(rofiViewState));
+        //g_debug("%s %i", "blocks_mode_get_display_value.selected line", rofi_view_get_selected_line(rofiViewState));
+        //g_debug("%s %i", "blocks_mode_get_display_value.active line", rofi_view_get_next_position(rofiViewState));
+    }
+
+}
+
+// function used on g_idle_add, it is here to guarantee that this is called once
+// each time the mode content is rendered
+static gboolean on_render_callback(gpointer context){
+    on_render(context);
+    Mode *sw = (Mode *) context;
+    BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    data->waiting_for_idle = FALSE;
+    return FALSE;
+}
+
+
 
 /************************
  extended mode methods
@@ -481,6 +514,7 @@ static int blocks_mode_init ( Mode *sw )
         pd->cmd_pid = 0;
         pd->buffer = g_string_sized_new (1024);
         pd->active_line = g_string_sized_new (1024);
+        pd->waiting_for_idle = FALSE;
         char *cmd = NULL;
         if (find_arg_str(CmdArg__BLOCKS_WRAP, &cmd)) {
             GError *error = NULL;
@@ -601,38 +635,13 @@ static void blocks_mode_destroy ( Mode *sw )
 
 static char * blocks_mode_get_display_value ( const Mode *sw, unsigned int selected_line, int *state, G_GNUC_UNUSED GList **attr_list, int get_entry )
 {
-
-
+    BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
+    if(!data->waiting_for_idle){
+        data->waiting_for_idle = TRUE;
+        g_idle_add (on_render_callback, sw);
+    }
     PageData * pageData = mode_get_private_data_current_page( sw );
-     g_debug("aaa %i %i", selected_line, pageData->lines->len);
-
-    if(selected_line >= pageData->lines->len){
-        return get_entry ? g_strdup("") : NULL;
-    }
-
     LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
-
-
-    RofiViewState * rofiViewState = rofi_view_get_active();
-
-
-    if(selected_line <= 0){
-        g_debug("%s", "blocks_mode_get_display_value");
-
-        /**
-         *   Mode._preprocess_input is not called when input is empty,
-         * the only method called when the input changes to empty is this one
-         * that is reason the following 3 lines are added.
-         */
-        if(rofiViewState != NULL){
-            BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
-            blocks_mode_verify_input_change(data, rofi_view_get_user_input(rofiViewState));
-            g_debug("%s %i", "blocks_mode_get_display_value.selected line", rofi_view_get_selected_line(rofiViewState));
-            g_debug("%s %i", "blocks_mode_get_display_value.active line", rofi_view_get_next_position(rofiViewState));
-
-
-        }
-    }
     *state |= 
         1 * lineData->urgent +
         2 * lineData->highlight +
