@@ -47,6 +47,7 @@
 #include <stdint.h>
 
 #include "string_utils.h"
+#include "render_state.h"
 #include "json_glib_extensions.h"
 
 typedef struct RofiViewState RofiViewState;
@@ -56,6 +57,7 @@ extern void rofi_view_set_overlay(RofiViewState * state, const char *text);
 extern void rofi_view_reload ( void );
 const char * rofi_view_get_user_input ( const RofiViewState *state );
 unsigned int rofi_view_get_selected_line ( const RofiViewState *state );
+void rofi_view_set_selected_line ( const RofiViewState *state, unsigned int selected_line );
 unsigned int rofi_view_get_next_position ( const RofiViewState *state );
 void rofi_view_handle_text ( RofiViewState *state, char *text );
 void rofi_view_clear_input ( RofiViewState *state );
@@ -147,9 +149,29 @@ typedef struct
     guint read_channel_watcher;
     gboolean waiting_for_idle;
 
+    guint previous_active_line;
 
 } BlocksModePrivateData;
 
+
+/**************
+ rofi extension
+****************/
+
+unsigned int blocks_mode_rofi_view_get_active_line(RofiViewState * rofiViewState, BlocksModePrivateData * data){
+    unsigned int selected_line = rofi_view_get_selected_line(rofiViewState);
+    unsigned int next_position = rofi_view_get_next_position(rofiViewState);
+    unsigned int previous_active_line = data->previous_active_line;
+    unsigned int length = data->currentPageData->lines->len;
+
+
+    if(next_position == 0) {
+        data->previous_active_line = length - 1;
+    } else {
+        data->previous_active_line = next_position - 1;
+    }
+    return data->previous_active_line; 
+}
 
 /**************
   utils
@@ -474,13 +496,18 @@ static void on_render(gpointer context){
 
     /**
      *   Mode._preprocess_input is not called when input is empty,
-     * the only method called when the input changes to empty is this one
-     * that is reason the following 3 lines are added.
+     * the only method called when the input changes to empty is blocks_mode_get_display_value
+     * which later this method is called, that is reason the following 3 lines are added.
      */
     if(rofiViewState != NULL){
         blocks_mode_verify_input_change(data, rofi_view_get_user_input(rofiViewState));
-        //g_debug("%s %i", "blocks_mode_get_display_value.selected line", rofi_view_get_selected_line(rofiViewState));
-        //g_debug("%s %i", "blocks_mode_get_display_value.active line", rofi_view_get_next_position(rofiViewState));
+        //if()
+
+        g_debug("%s %i", "on_render.selected line", rofi_view_get_selected_line(rofiViewState));
+        g_debug("%s %i", "on_render.next pos", rofi_view_get_next_position(rofiViewState));
+        g_debug("%s %i", "on_render.active line", blocks_mode_rofi_view_get_active_line(rofiViewState, data));
+    
+
     }
 
 }
@@ -569,7 +596,7 @@ static unsigned int blocks_mode_get_num_entries ( const Mode *sw )
 {
     g_debug("%s", "blocks_mode_get_num_entries");
     PageData * pageData = mode_get_private_data_current_page( sw );
-    return pageData->lines->len;
+    return pageData->lines->len + 2;
 }
 
 static ModeMode blocks_mode_result ( Mode *sw, int mretv, char **input, unsigned int selected_line )
@@ -577,12 +604,13 @@ static ModeMode blocks_mode_result ( Mode *sw, int mretv, char **input, unsigned
     ModeMode           retv  = MODE_EXIT;
     BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = data->currentPageData;
-
     if ( mretv & MENU_NEXT ) {
         retv = NEXT_DIALOG;
     } else if ( mretv & MENU_PREVIOUS ) {
         retv = PREVIOUS_DIALOG;
     } else if ( mretv & MENU_QUICK_SWITCH ) {
+        if(selected_line >= pageData->lines->len){ return RELOAD_DIALOG; }
+
         retv = ( mretv & MENU_LOWER_MASK );
         int custom_key = retv%20 + 1;
         char str[8];
@@ -594,10 +622,12 @@ static ModeMode blocks_mode_result ( Mode *sw, int mretv, char **input, unsigned
 
         retv = RELOAD_DIALOG;
     } else if ( ( mretv & MENU_OK ) ) {
+        if(selected_line >= pageData->lines->len){ return RELOAD_DIALOG; }
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
         blocks_mode_private_data_write_to_channel(data, Event__SELECT_ENTRY, lineData->text);
         retv = RELOAD_DIALOG;
     } else if ( ( mretv & MENU_ENTRY_DELETE ) == MENU_ENTRY_DELETE ) {
+        if(selected_line >= pageData->lines->len){ return RELOAD_DIALOG; }
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
         blocks_mode_private_data_write_to_channel(data, Event__DELETE_ENTRY, lineData->text);
         retv = RELOAD_DIALOG;
@@ -640,7 +670,14 @@ static char * blocks_mode_get_display_value ( const Mode *sw, unsigned int selec
         data->waiting_for_idle = TRUE;
         g_idle_add (on_render_callback, sw);
     }
+
     PageData * pageData = mode_get_private_data_current_page( sw );
+    if(pageData->lines->len <= selected_line){
+        *state |= 16;
+        return get_entry ? g_strdup("") : NULL;
+    }
+
+
     LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
     *state |= 
         1 * lineData->urgent +
@@ -654,8 +691,14 @@ static int blocks_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens, 
     if(selected_line <= 0){
         g_debug("%s", "blocks_mode_token_match");
     }
+
     BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = data->currentPageData;
+    
+    if(pageData->lines->len <= selected_line){
+        return FALSE;
+    }
+
     if(data->input_action == InputAction__SEND_ACTION){
         return TRUE;
     }
