@@ -111,8 +111,6 @@ typedef struct
 
     RenderState * render_state;
 
-    guint previous_position;
-
 } BlocksModePrivateData;
 
 
@@ -122,15 +120,12 @@ typedef struct
 
 unsigned int blocks_mode_rofi_view_get_current_position(RofiViewState * rofiViewState){
     unsigned int next_position = rofi_view_get_next_position(rofiViewState);
-    unsigned int previous_position = data->previous_position;
-    unsigned int length = data->currentPageData->lines->len;
-
+    unsigned int length = page_data_get_number_of_lines(data->currentPageData);
     if(next_position <= 0 || next_position >= UINT32_MAX - 10) {
-        data->previous_position = length - 1;
+        return length - 1;
     } else {
-        data->previous_position = next_position - 1;
+        return next_position - 1;
     }
-    return data->previous_position; 
 }
 
 /**************
