@@ -1,28 +1,5 @@
-/**
- * rofi-blocks
- *
- * MIT/X11 License
- * Copyright (c) 2019 Omar Castro <omar.castro.360@gmail.com>
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2020 Omar Castro
 
 #define G_LOG_DOMAIN    "BlocksMode"
 
@@ -48,6 +25,7 @@
 
 #include "string_utils.h"
 #include "render_state.h"
+#include "page_data.h"
 #include "json_glib_extensions.h"
 
 typedef struct RofiViewState RofiViewState;
@@ -67,7 +45,7 @@ G_MODULE_EXPORT Mode mode;
 const gchar* CmdArg__BLOCKS_WRAP = "-blocks-wrap";
 const gchar* CmdArg__MARKUP_ROWS = "-markup-rows";
 
-const gchar* EMPTY_STRING = "";
+static const gchar* EMPTY_STRING = "";
 
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
@@ -112,24 +90,6 @@ static const char *event_labels[] = {
 
 typedef struct
 {
-    gchar *text;
-    gboolean urgent;
-    gboolean highlight;
-    gboolean markup;
-} LineData;
-
-typedef struct
-{
-    gboolean markup_default;
-    GString *message;
-    GString *overlay;
-    GString *prompt;
-    GString *input;
-    GArray *lines;
-} PageData;
-
-typedef struct
-{
     PageData * currentPageData;
     GString * input_format;
     InputAction input_action;
@@ -148,6 +108,8 @@ typedef struct
     int read_channel_fd;
     guint read_channel_watcher;
     gboolean waiting_for_idle;
+
+    RenderState * render_state;
 
     guint previous_active_line;
 
@@ -221,57 +183,7 @@ pid_t popen2(const char *command, int *infp, int *outfp){
     Page data methods
 ************************/
 
-PageData * page_data_new(){
-    PageData * pageData = g_malloc0( sizeof ( *pageData ) );
-    pageData->markup_default = find_arg(CmdArg__MARKUP_ROWS) >= 0 ? TRUE : FALSE;
-    pageData->message = g_string_sized_new(256);
-    pageData->overlay = g_string_sized_new(64);
-    pageData->prompt = g_string_sized_new(64);
-    pageData->input = g_string_sized_new(64);
-    pageData->lines = g_array_new (FALSE, TRUE, sizeof (LineData));
-    return pageData;
-}
 
-void page_data_free(PageData * pageData){
-    g_string_free(pageData->message, TRUE);
-    g_string_free(pageData->overlay, TRUE);
-    g_string_free(pageData->prompt, TRUE);
-    g_string_free(pageData->input, TRUE);
-    g_array_free (pageData->lines, TRUE);
-    g_free(pageData);
-}
-
-void page_data_add_line(PageData * pageData, const gchar * label, gboolean urgent, gboolean highlight, gboolean markup){
-    LineData line = { .text = g_strdup(label), .urgent = urgent, .highlight = highlight, .markup = markup };
-    g_array_append_val(pageData->lines, line);
-}
-
-void page_data_add_line_json_node(PageData * pageData, JsonNode * element){
-    if(JSON_NODE_HOLDS_VALUE(element) && json_node_get_value_type(element) == G_TYPE_STRING){
-        page_data_add_line(pageData, json_node_get_string(element), FALSE, FALSE, pageData->markup_default);
-    } else if(JSON_NODE_HOLDS_OBJECT(element)){
-        JsonObject * line_obj = json_node_get_object(element);
-        JsonNode * text_node = json_object_get_member(line_obj, "text");
-        JsonNode * urgent_node = json_object_get_member(line_obj, "urgent");
-        JsonNode * highlight_node = json_object_get_member(line_obj, "highlight");
-        JsonNode * markup_node = json_object_get_member(line_obj, "markup");
-        const gchar * text = json_node_get_string_or_else(text_node, EMPTY_STRING);
-        gboolean urgent = json_node_get_boolean_or_else(urgent_node, FALSE);
-        gboolean highlight = json_node_get_boolean_or_else(highlight_node, FALSE);
-        gboolean markup = json_node_get_boolean_or_else(markup_node, pageData->markup_default);
-        page_data_add_line(pageData, text, urgent, highlight, markup);
-    }
-}
-
-void page_data_clear_lines(PageData * pageData){
-    GArray * lines = pageData->lines;
-    int lines_length = lines->len;
-    for (int i = 0; i < lines_length; i++){
-        LineData line = g_array_index (lines, LineData, i);
-        g_free(line.text);
-    }
-    g_array_set_size(pageData->lines, 0);
-}
 
 /**************************************
   extended mode pirvate data methods
@@ -535,6 +447,7 @@ static int blocks_mode_init ( Mode *sw )
         BlocksModePrivateData *pd = g_malloc0 ( sizeof ( *pd ) );
         mode_set_private_data ( sw, (void *) pd );
         pd->currentPageData = page_data_new();
+        pd->currentPageData->markup_default = find_arg(CmdArg__MARKUP_ROWS) >= 0 ? TRUE : FALSE;
         pd->input_format = g_string_new("{\"name\":\"{{name_escaped}}\", \"value\":\"{{value_escaped}}\"}");
         pd->input_action = InputAction__FILTER_USING_ROFI;
         pd->close_on_child_exit = TRUE;
@@ -596,7 +509,7 @@ static unsigned int blocks_mode_get_num_entries ( const Mode *sw )
 {
     g_debug("%s", "blocks_mode_get_num_entries");
     PageData * pageData = mode_get_private_data_current_page( sw );
-    return pageData->lines->len + 2;
+    return pageData->lines->len;
 }
 
 static ModeMode blocks_mode_result ( Mode *sw, int mretv, char **input, unsigned int selected_line )
@@ -651,7 +564,7 @@ static void blocks_mode_destroy ( Mode *sw )
         if ( data->parser ) {
             g_object_unref ( data->parser );
         }
-        page_data_free ( data->currentPageData );
+        page_data_destroy ( data->currentPageData );
         close ( data->write_channel_fd );
         close ( data->read_channel_fd );
         g_free ( data->write_channel );
