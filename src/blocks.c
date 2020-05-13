@@ -111,7 +111,7 @@ typedef struct
 
     RenderState * render_state;
 
-    guint previous_active_line;
+    guint previous_position;
 
 } BlocksModePrivateData;
 
@@ -120,19 +120,17 @@ typedef struct
  rofi extension
 ****************/
 
-unsigned int blocks_mode_rofi_view_get_active_line(RofiViewState * rofiViewState, BlocksModePrivateData * data){
-    unsigned int selected_line = rofi_view_get_selected_line(rofiViewState);
+unsigned int blocks_mode_rofi_view_get_current_position(RofiViewState * rofiViewState){
     unsigned int next_position = rofi_view_get_next_position(rofiViewState);
-    unsigned int previous_active_line = data->previous_active_line;
+    unsigned int previous_position = data->previous_position;
     unsigned int length = data->currentPageData->lines->len;
 
-
-    if(next_position == 0) {
-        data->previous_active_line = length - 1;
+    if(next_position <= 0 || next_position >= UINT32_MAX - 10) {
+        data->previous_position = length - 1;
     } else {
-        data->previous_active_line = next_position - 1;
+        data->previous_position = next_position - 1;
     }
-    return data->previous_active_line; 
+    return data->previous_position; 
 }
 
 /**************
@@ -417,7 +415,7 @@ static void on_render(gpointer context){
 
         g_debug("%s %i", "on_render.selected line", rofi_view_get_selected_line(rofiViewState));
         g_debug("%s %i", "on_render.next pos", rofi_view_get_next_position(rofiViewState));
-        g_debug("%s %i", "on_render.active line", blocks_mode_rofi_view_get_active_line(rofiViewState, data));
+        g_debug("%s %i", "on_render.active line", blocks_mode_rofi_view_get_current_position(rofiViewState, data));
     
 
     }
