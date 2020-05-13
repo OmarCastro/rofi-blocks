@@ -118,9 +118,9 @@ typedef struct
  rofi extension
 ****************/
 
-unsigned int blocks_mode_rofi_view_get_current_position(RofiViewState * rofiViewState){
+unsigned int blocks_mode_rofi_view_get_current_position(RofiViewState * rofiViewState, PageData * pageData){
     unsigned int next_position = rofi_view_get_next_position(rofiViewState);
-    unsigned int length = page_data_get_number_of_lines(data->currentPageData);
+    unsigned int length = page_data_get_number_of_lines(pageData);
     if(next_position <= 0 || next_position >= UINT32_MAX - 10) {
         return length - 1;
     } else {
@@ -405,7 +405,7 @@ static void on_render(gpointer context){
 
         g_debug("%s %i", "on_render.selected line", rofi_view_get_selected_line(rofiViewState));
         g_debug("%s %i", "on_render.next pos", rofi_view_get_next_position(rofiViewState));
-        g_debug("%s %i", "on_render.active line", blocks_mode_rofi_view_get_current_position(rofiViewState, data));
+        g_debug("%s %i", "on_render.active line", blocks_mode_rofi_view_get_current_position(rofiViewState, data->currentPageData));
     
 
     }

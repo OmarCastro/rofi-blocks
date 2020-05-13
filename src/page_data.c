@@ -27,16 +27,16 @@ void page_data_destroy(PageData * pageData){
 }
 
 
-void page_data_get_number_of_lines(PageData * pageData){
+size_t page_data_get_number_of_lines(PageData * pageData){
 	return pageData->lines->len;
 }
 
 
-LineData * page_data_get_line_by_index_or_null(PageData * pageData, unsigned int index, LineData * elseValue){
+LineData * page_data_get_line_by_index_or_else(PageData * pageData, unsigned int index, LineData * elseValue){
 	if(index >= pageData->lines->len){
 		return elseValue;
 	}
-	LineData * result = &g_array_index (pageData->lines, LineData, selected_line);
+	LineData * result = &g_array_index (pageData->lines, LineData, index);
 	return result;
 }
 

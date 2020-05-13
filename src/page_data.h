@@ -29,7 +29,7 @@ PageData * page_data_new();
 
 void page_data_destroy(PageData * pageData);
 
-void page_data_get_number_of_lines(PageData * pageData);
+size_t page_data_get_number_of_lines(PageData * pageData);
 
 LineData * page_data_get_line_by_index_or_else(PageData * pageData, unsigned int index, LineData * elseValue);
 
