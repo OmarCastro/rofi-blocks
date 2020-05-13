@@ -26,6 +26,21 @@ void page_data_destroy(PageData * pageData){
     g_free(pageData);
 }
 
+
+void page_data_get_number_of_lines(PageData * pageData){
+	return pageData->lines->len;
+}
+
+
+LineData * page_data_get_line_by_index_or_null(PageData * pageData, unsigned int index, LineData * elseValue){
+	if(index >= pageData->lines->len){
+		return elseValue;
+	}
+	LineData * result = &g_array_index (pageData->lines, LineData, selected_line);
+	return result;
+}
+
+
 void page_data_add_line(PageData * pageData, const gchar * label, gboolean urgent, gboolean highlight, gboolean markup){
     LineData line = { .text = g_strdup(label), .urgent = urgent, .highlight = highlight, .markup = markup };
     g_array_append_val(pageData->lines, line);

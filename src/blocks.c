@@ -177,11 +177,6 @@ pid_t popen2(const char *command, int *infp, int *outfp){
 }
 
 
-/***********************
-    Page data methods
-************************/
-
-
 
 /**************************************
   extended mode pirvate data methods
@@ -507,7 +502,7 @@ static unsigned int blocks_mode_get_num_entries ( const Mode *sw )
 {
     g_debug("%s", "blocks_mode_get_num_entries");
     PageData * pageData = mode_get_private_data_current_page( sw );
-    return pageData->lines->len;
+    return page_data_get_number_of_lines(pageData);
 }
 
 static ModeMode blocks_mode_result ( Mode *sw, int mretv, char **input, unsigned int selected_line )
@@ -583,13 +578,12 @@ static char * blocks_mode_get_display_value ( const Mode *sw, unsigned int selec
     }
 
     PageData * pageData = mode_get_private_data_current_page( sw );
-    if(pageData->lines->len <= selected_line){
+    LineData * lineData = page_data_get_line_by_index_or_else(pageData, selected_line, NULL);
+    if(lineData == NULL){
         *state |= 16;
         return get_entry ? g_strdup("") : NULL;
     }
 
-
-    LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
     *state |= 
         1 * lineData->urgent +
         2 * lineData->highlight +
@@ -599,28 +593,22 @@ static char * blocks_mode_get_display_value ( const Mode *sw, unsigned int selec
 
 static int blocks_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens, unsigned int selected_line )
 {
-    if(selected_line <= 0){
-        g_debug("%s", "blocks_mode_token_match");
-    }
-
     BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = data->currentPageData;
-    
-    if(pageData->lines->len <= selected_line){
+    LineData * lineData = page_data_get_line_by_index_or_else(pageData, selected_line, NULL);
+    if(lineData == NULL){
         return FALSE;
     }
 
     if(data->input_action == InputAction__SEND_ACTION){
         return TRUE;
     }
-    LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
     return helper_token_match ( tokens, lineData->text);
 }
 
 static char * blocks_mode_get_message ( const Mode *sw )
 {
     g_debug("%s", "blocks_mode_get_message");
-    BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = mode_get_private_data_current_page( sw );
     gchar* result = g_strdup(pageData->message->str);
     return result;
