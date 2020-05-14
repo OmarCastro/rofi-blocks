@@ -75,14 +75,17 @@ char *str_replace_in(char **orig, const char *rep, const char *with) {
 }
 
 char *str_replace_in_escaped(char **orig, const char *rep, const char *with) {
-    int len = strlen(with);
-
-    gchar * escaped_with = NULL;
-    escaped_with = (char*)calloc(len*2, sizeof(gchar));
-
+    char * escaped_with = str_new_escaped_for_json_string(with);
     str_escape_for_json_string(with, escaped_with);
     char * result = str_replace_in(orig, rep, escaped_with);
-    g_free((char *) escaped_with);
+    g_free(escaped_with);
+    return result;
+}
+
+char * str_new_escaped_for_json_string(const char *str_to_escape){
+    int len = strlen(str_to_escape);
+    char * result = (char*)calloc(len*2, sizeof(char));
+    str_escape_for_json_string(str_to_escape, result);
     return result;
 }
 

@@ -128,50 +128,6 @@ unsigned int blocks_mode_rofi_view_get_current_position(RofiViewState * rofiView
     }
 }
 
-/**************
-  utils
-***************/
-
-
-pid_t popen2(const char *command, int *infp, int *outfp){
-
-    const short READ = 0;
-    const short WRITE = 1;
-    int p_stdin[2], p_stdout[2];
-    pid_t pid;
-    if (pipe(p_stdin) != 0 || pipe(p_stdout) != 0)
-        return -1;
-
-    pid = fork();
-
-    if (pid < 0)
-        return pid;
-
-    else if (pid == 0)
-    {
-        close(p_stdin[WRITE]);
-        dup2(p_stdin[READ], READ);
-        close(p_stdout[READ]);
-        dup2(p_stdout[WRITE], WRITE);
-        execl(command, (char *) NULL);
-        printf("{\"close on exit\": false, \"message\":\"Error loading %s:%s\"}\n", command, strerror(errno));
-        perror("execl");
-        exit(1);
-    }
-
-    if (infp == NULL)
-        close(p_stdin[WRITE]);
-    else
-        *infp = p_stdin[WRITE];
-    if (outfp == NULL)
-        close(p_stdout[READ]);
-    else
-        *outfp = p_stdout[READ];
-    return pid;
-
-}
-
-
 
 /**************************************
   extended mode pirvate data methods
@@ -238,7 +194,14 @@ static void blocks_mode_private_data_update_lines(BlocksModePrivateData * data){
 
 static void blocks_mode_private_data_update_page(BlocksModePrivateData * data){
     GError * error = NULL;
-    json_parser_load_from_data(data->parser,data->active_line->str,data->active_line->len,&error);
+
+    if(! json_parser_load_from_data(data->parser,data->active_line->str,data->active_line->len,&error)){
+        fprintf(stderr, "Unable to parse line: %s\n", error->message);
+        g_error_free ( error );
+        return;
+    }
+    
+
     data->root = json_node_get_object(json_parser_get_root(data->parser));
 
     blocks_mode_private_data_update_input_action(data);
@@ -254,6 +217,10 @@ static void blocks_mode_private_data_update_page(BlocksModePrivateData * data){
 
 void blocks_mode_private_data_write_to_channel ( BlocksModePrivateData * data, Event event, const char * action_value){
         GIOChannel * write_channel = data->write_channel;
+        if(data->write_channel == NULL){
+            //gets here when the script exits or there was an error loading it
+            return;
+        }
         const gchar * format = data->input_format->str;
         gchar * format_result = str_replace(format, "{{name}}", event_labels[event]);
         format_result = str_replace_in(&format_result, "{{name_enum}}", event_enum_labels[event]);
@@ -381,6 +348,7 @@ static void on_child_status (GPid pid, gint status, gpointer context)
     Mode *sw = (Mode *) context;
     BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     g_spawn_close_pid (pid);
+    data->write_channel = NULL;
     if(data->close_on_child_exit){
           exit(0);    
     }
@@ -443,6 +411,7 @@ static int blocks_mode_init ( Mode *sw )
         pd->buffer = g_string_sized_new (1024);
         pd->active_line = g_string_sized_new (1024);
         pd->waiting_for_idle = FALSE;
+        pd->parser = json_parser_new ();
         char *cmd = NULL;
         if (find_arg_str(CmdArg__BLOCKS_WRAP, &cmd)) {
             GError *error = NULL;
@@ -455,11 +424,34 @@ static int blocks_mode_init ( Mode *sw )
                 return 0;
             }
 
-            pd->cmd_pid = popen2(cmd, &cmd_input_fd, &cmd_output_fd);
-            if (pd->cmd_pid <= 0){
-                fprintf(stderr,"Unable to exec %s\n", cmd);
-                exit(1);
+            if ( ! g_spawn_async_with_pipes ( NULL, argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_SEARCH_PATH, NULL, NULL, &(pd->cmd_pid), &(cmd_input_fd), &(cmd_output_fd), NULL, &error)) {
+                fprintf(stderr, "Unable to exec %s\n", error->message);
+                char buffer[1024];
+                int result = 4;
+                char * cmd_escaped = str_new_escaped_for_json_string(cmd);
+                char * error_message_escaped = str_new_escaped_for_json_string(error->message);
+                snprintf(buffer, sizeof(buffer), 
+                    "{\"close on exit\": false, \"message\":\"Error loading %s:%s\"}\n", 
+                    cmd_escaped,
+                    error_message_escaped
+                );
+                fprintf(stderr, "message:  %s\n", buffer);
+
+                g_string_assign(pd->active_line, buffer);
+                blocks_mode_private_data_update_page(pd);
+                g_error_free ( error );
+                g_free(cmd_escaped);
+                g_free(error_message_escaped);
+                return TRUE;
             }
+
+
+
+            //pd->cmd_pid = popen2(cmd, &cmd_input_fd, &cmd_output_fd);
+            //if (pd->cmd_pid <= 0){
+            //    fprintf(stderr,"Unable to exec %s\n", cmd);
+            //    return TRUE;
+            //}
             g_strfreev(argv);
 
             pd->read_channel_fd = cmd_output_fd;
@@ -487,9 +479,6 @@ static int blocks_mode_init ( Mode *sw )
         }
 
         pd->read_channel_watcher = g_io_add_watch(pd->read_channel, G_IO_IN, on_new_input, sw);
-
-
-        pd->parser = json_parser_new ();
     }
     return TRUE;
 }

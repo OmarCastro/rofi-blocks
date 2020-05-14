@@ -11,5 +11,6 @@ char *str_replace_in(char **orig, const char *rep, const char *with);
 
 char *str_replace_in_escaped(char **orig, const char *rep, const char *with);
 
+char *str_new_escaped_for_json_string(const char *str_to_escape);
 
 #endif // ROFI_BLOCKS_STRING_UTILS_H
