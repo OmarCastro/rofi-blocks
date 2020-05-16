@@ -3,10 +3,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
-#include <errno.h>
-#include <gmodule.h>
 #include "string_utils.h"
 
 //// private method references
@@ -76,9 +73,8 @@ char *str_replace_in(char **orig, const char *rep, const char *with) {
 
 char *str_replace_in_escaped(char **orig, const char *rep, const char *with) {
     char * escaped_with = str_new_escaped_for_json_string(with);
-    str_escape_for_json_string(with, escaped_with);
     char * result = str_replace_in(orig, rep, escaped_with);
-    g_free(escaped_with);
+    free(escaped_with);
     return result;
 }
 
