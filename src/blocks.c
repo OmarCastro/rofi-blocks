@@ -3,13 +3,7 @@
 
 #define G_LOG_DOMAIN    "BlocksMode"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <errno.h>
-#include <gmodule.h>
-#include <time.h>
+
 #include <sys/types.h>
 #include <signal.h>
 #include <fcntl.h>
@@ -27,6 +21,7 @@
 #include "render_state.h"
 #include "page_data.h"
 #include "json_glib_extensions.h"
+#include "blocks_mode_data.h"
 
 typedef struct RofiViewState RofiViewState;
 void rofi_view_switch_mode ( RofiViewState *state, Mode *mode );
@@ -46,20 +41,6 @@ const gchar* CmdArg__BLOCKS_WRAP = "-blocks-wrap";
 const gchar* CmdArg__MARKUP_ROWS = "-markup-rows";
 
 static const gchar* EMPTY_STRING = "";
-
-#define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
-
-typedef enum {
-    InputAction__SEND_ACTION,
-    InputAction__FILTER_USING_ROFI
-} InputAction;
-
-static const char *input_action_names[] = {
-    "send",
-    "filter"
-};
-
-size_t NUM_OF_INPUT_ACTIONS = NELEMS(input_action_names);
 
 typedef enum {
     Event__INPUT_CHANGE,
@@ -88,32 +69,6 @@ static const char *event_labels[] = {
     "execute custom input"
 };
 
-typedef struct
-{
-    PageData * currentPageData;
-    GString * input_format;
-    InputAction input_action;
-
-    JsonParser *parser;
-    JsonObject *root;
-    GError *error;
-    GString * active_line;
-    GString * buffer;
-    
-    GPid cmd_pid;
-    gboolean close_on_child_exit;
-    GIOChannel * write_channel;
-    GIOChannel * read_channel;
-    int write_channel_fd;
-    int read_channel_fd;
-    guint read_channel_watcher;
-    gboolean waiting_for_idle;
-
-    RenderState * render_state;
-
-} BlocksModePrivateData;
-
-
 /**************
  rofi extension
 ****************/
@@ -133,87 +88,7 @@ unsigned int blocks_mode_rofi_view_get_current_position(RofiViewState * rofiView
   extended mode pirvate data methods
 **************************************/
 
-static void blocks_mode_private_data_update_string(BlocksModePrivateData * data, GString * str, const char * json_root_member){
-    const gchar* memberVal = json_object_get_string_member_or_else(data->root, json_root_member, NULL);
-    if(memberVal != NULL){
-        g_string_assign(str,memberVal);
-    }
-}
 
-static void blocks_mode_private_data_update_input_action(BlocksModePrivateData * data){
-    const gchar* input_action = json_object_get_string_member_or_else(data->root, "input action", NULL);
-    if(input_action != NULL){
-        for (int i = 0; i < NUM_OF_INPUT_ACTIONS; ++i)
-        {
-            if(g_strcmp0(input_action, input_action_names[i]) == 0){
-                data->input_action = (InputAction) i;
-            }
-        }
-    }
-}
-
-static void blocks_mode_private_data_update_message(BlocksModePrivateData * data){
-    blocks_mode_private_data_update_string(data, data->currentPageData->message, "message");
-}
-
-static void blocks_mode_private_data_update_overlay(BlocksModePrivateData * data){
-    blocks_mode_private_data_update_string(data, data->currentPageData->overlay, "overlay");
-}
-
-static void blocks_mode_private_data_update_prompt(BlocksModePrivateData * data){
-    blocks_mode_private_data_update_string(data, data->currentPageData->prompt, "prompt");
-}
-
-static void blocks_mode_private_data_update_input(BlocksModePrivateData * data){
-    blocks_mode_private_data_update_string(data, data->currentPageData->input, "input");
-}
-
-static void blocks_mode_private_data_update_input_format(BlocksModePrivateData * data){
-    blocks_mode_private_data_update_string(data, data->input_format, "event format");
-}
-
-static void blocks_mode_private_data_update_close_on_child_exit(BlocksModePrivateData * data){
-    gboolean orig = data->close_on_child_exit;
-    gboolean now = json_object_get_boolean_member_or_else(data->root, "close on exit" , orig);
-    data->close_on_child_exit = now;
-}
-
-static void blocks_mode_private_data_update_lines(BlocksModePrivateData * data){
-    JsonObject *root = data->root;
-    PageData * pageData = data->currentPageData;
-    const char * LINES_PROP = "lines";
-    if(json_object_has_member(root, LINES_PROP)){
-        JsonArray* lines = json_object_get_array_member(data->root, LINES_PROP);
-        page_data_clear_lines( pageData );
-        size_t len = json_array_get_length(lines);
-        for(int index = 0; index < len; ++index){
-            page_data_add_line_json_node(pageData, json_array_get_element(lines, index));
-        }
-    }
-}
-
-static void blocks_mode_private_data_update_page(BlocksModePrivateData * data){
-    GError * error = NULL;
-
-    if(! json_parser_load_from_data(data->parser,data->active_line->str,data->active_line->len,&error)){
-        fprintf(stderr, "Unable to parse line: %s\n", error->message);
-        g_error_free ( error );
-        return;
-    }
-    
-
-    data->root = json_node_get_object(json_parser_get_root(data->parser));
-
-    blocks_mode_private_data_update_input_action(data);
-    blocks_mode_private_data_update_message(data);
-    blocks_mode_private_data_update_overlay(data);
-    blocks_mode_private_data_update_input(data);
-    blocks_mode_private_data_update_prompt(data);
-    blocks_mode_private_data_update_close_on_child_exit(data);
-    blocks_mode_private_data_update_input_format(data);
-    blocks_mode_private_data_update_lines(data);
-    
-}
 
 void blocks_mode_private_data_write_to_channel ( BlocksModePrivateData * data, Event event, const char * action_value){
         GIOChannel * write_channel = data->write_channel;
@@ -580,14 +455,14 @@ static int blocks_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens, 
     BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = data->currentPageData;
     LineData * lineData = page_data_get_line_by_index_or_else(pageData, selected_line, NULL);
-    if(lineData == NULL){
-        return FALSE;
-    }
+    //if(lineData == NULL){
+    //    return FALSE;
+    //}
 
-    if(data->input_action == InputAction__SEND_ACTION){
+//    if(data->input_action == InputAction__SEND_ACTION){
         return TRUE;
-    }
-    return helper_token_match ( tokens, lineData->text);
+  //  }
+    //return helper_token_match ( tokens, lineData->text);
 }
 
 static char * blocks_mode_get_message ( const Mode *sw )

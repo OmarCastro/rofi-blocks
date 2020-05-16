@@ -5,6 +5,7 @@ plugin_LTLIBRARIES = blocks.la
 
 blocks_la_SOURCES=\
 		 src/blocks.c \
+		 src/blocks_mode_data.c \
 		 src/string_utils.c \
 		 src/json_glib_extensions.c \
 		 src/page_data.c \
