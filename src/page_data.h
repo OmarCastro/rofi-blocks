@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2020 Omar Castro
 
-
+#ifndef ROFI_BLOCKS_PAGE_DATA_H
+#define ROFI_BLOCKS_PAGE_DATA_H
 
 #include <gmodule.h>
 #include <json-glib/json-glib.h>
@@ -39,3 +40,4 @@ void page_data_add_line_json_node(PageData * pageData, JsonNode * element);
 
 void page_data_clear_lines(PageData * pageData);
 
+#endif // ROFI_BLOCKS_PAGE_DATA_H

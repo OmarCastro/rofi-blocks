@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2020 Omar Castro
-
 #ifndef ROFI_BLOCKS_JSON_GLIB_EXTENSIONS
 #define ROFI_BLOCKS_JSON_GLIB_EXTENSIONS
-
 
 #include <json-glib/json-glib.h>
 

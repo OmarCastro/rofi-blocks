@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2020 Omar Castro
+#ifndef ROFI_BLOCKS_RENDER_DATA_H
+#define ROFI_BLOCKS_RENDER_DATA_H
 
 
 #include <stdbool.h>
@@ -22,3 +24,5 @@ unsigned int render_state_get_current_active( RenderState * state );
 void render_state_set_current_active( RenderState * state, unsigned int active_line ); 
 
 void render_state_prepare_render( RenderState * state ); 
+
+#endif // ROFI_BLOCKS_RENDER_DATA_H
