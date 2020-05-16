@@ -28,7 +28,7 @@ TEXT=$(cat <<EOF | tr -d "\n" | tr -d "\t"
 		 \n
 		 You can change the format by setting the environment variable 'format' when running
 		 this script
-	"}
+	"
 }
 EOF
 )
