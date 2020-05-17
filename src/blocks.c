@@ -455,14 +455,14 @@ static int blocks_mode_token_match ( const Mode *sw, rofi_int_matcher **tokens, 
     BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     PageData * pageData = data->currentPageData;
     LineData * lineData = page_data_get_line_by_index_or_else(pageData, selected_line, NULL);
-    //if(lineData == NULL){
-    //    return FALSE;
-    //}
+    if(lineData == NULL){
+        return FALSE;
+    }
 
-//    if(data->input_action == InputAction__SEND_ACTION){
+    if(data->input_action == InputAction__SEND_ACTION){
         return TRUE;
-  //  }
-    //return helper_token_match ( tokens, lineData->text);
+    }
+    return helper_token_match ( tokens, lineData->text);
 }
 
 static char * blocks_mode_get_message ( const Mode *sw )
