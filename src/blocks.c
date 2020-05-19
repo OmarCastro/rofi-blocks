@@ -275,18 +275,8 @@ static gboolean on_render_callback(gpointer context){
 static int blocks_mode_init ( Mode *sw )
 {
     if ( mode_get_private_data ( sw ) == NULL ) {
-        BlocksModePrivateData *pd = g_malloc0 ( sizeof ( *pd ) );
+        BlocksModePrivateData *pd = blocks_mode_private_data_update_new();
         mode_set_private_data ( sw, (void *) pd );
-        pd->currentPageData = page_data_new();
-        pd->currentPageData->markup_default = find_arg(CmdArg__MARKUP_ROWS) >= 0 ? TRUE : FALSE;
-        pd->input_format = g_string_new("{\"name\":\"{{name_escaped}}\", \"value\":\"{{value_escaped}}\"}");
-        pd->input_action = InputAction__FILTER_USING_ROFI;
-        pd->close_on_child_exit = TRUE;
-        pd->cmd_pid = 0;
-        pd->buffer = g_string_sized_new (1024);
-        pd->active_line = g_string_sized_new (1024);
-        pd->waiting_for_idle = FALSE;
-        pd->parser = json_parser_new ();
         char *cmd = NULL;
         if (find_arg_str(CmdArg__BLOCKS_WRAP, &cmd)) {
             GError *error = NULL;
@@ -320,13 +310,6 @@ static int blocks_mode_init ( Mode *sw )
                 return TRUE;
             }
 
-
-
-            //pd->cmd_pid = popen2(cmd, &cmd_input_fd, &cmd_output_fd);
-            //if (pd->cmd_pid <= 0){
-            //    fprintf(stderr,"Unable to exec %s\n", cmd);
-            //    return TRUE;
-            //}
             g_strfreev(argv);
 
             pd->read_channel_fd = cmd_output_fd;
@@ -407,21 +390,7 @@ static void blocks_mode_destroy ( Mode *sw )
 {
     BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     if ( data != NULL ) {
-        if(data->cmd_pid > 0){
-            kill(data->cmd_pid, SIGTERM);
-        }
-        if ( data->read_channel_watcher > 0 ) {
-            g_source_remove ( data->read_channel_watcher );
-        }
-        if ( data->parser ) {
-            g_object_unref ( data->parser );
-        }
-        page_data_destroy ( data->currentPageData );
-        close ( data->write_channel_fd );
-        close ( data->read_channel_fd );
-        g_free ( data->write_channel );
-        g_free ( data->read_channel );
-        g_free ( data );
+        blocks_mode_private_data_update_destroy(data);
         mode_set_private_data ( sw, NULL );
     }
 }
@@ -433,7 +402,7 @@ static char * blocks_mode_get_display_value ( const Mode *sw, unsigned int selec
     BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     if(!data->waiting_for_idle){
         data->waiting_for_idle = TRUE;
-        g_idle_add (on_render_callback, sw);
+        g_idle_add (on_render_callback, (void *) sw);
     }
 
     PageData * pageData = mode_get_private_data_current_page( sw );

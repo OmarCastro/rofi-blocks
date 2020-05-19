@@ -3,6 +3,14 @@
 #include "blocks_mode_data.h"
 
 
+const char * const input_action_names[2] = {
+    "send",
+    "filter"
+};
+
+static const size_t NUM_OF_INPUT_ACTIONS = (sizeof(input_action_names) / sizeof((input_action_names)[0]));
+
+
 static void blocks_mode_private_data_update_string(BlocksModePrivateData * data, GString * str, const char * json_root_member);
 static void blocks_mode_private_data_update_input_action(BlocksModePrivateData * data);
 static void blocks_mode_private_data_update_message(BlocksModePrivateData * data);
@@ -12,6 +20,43 @@ static void blocks_mode_private_data_update_input(BlocksModePrivateData * data);
 static void blocks_mode_private_data_update_input_format(BlocksModePrivateData * data);
 static void blocks_mode_private_data_update_close_on_child_exit(BlocksModePrivateData * data);
 static void blocks_mode_private_data_update_lines(BlocksModePrivateData * data);
+
+
+
+BlocksModePrivateData * blocks_mode_private_data_update_new(){
+    BlocksModePrivateData *pd = g_malloc0 ( sizeof ( *pd ) );
+    pd->currentPageData = page_data_new();
+    pd->currentPageData->markup_default = TRUE;
+    pd->input_format = g_string_new("{\"name\":\"{{name_escaped}}\", \"value\":\"{{value_escaped}}\"}");
+    pd->input_action = InputAction__FILTER_USING_ROFI;
+    pd->close_on_child_exit = TRUE;
+    pd->cmd_pid = 0;
+    pd->buffer = g_string_sized_new (1024);
+    pd->active_line = g_string_sized_new (1024);
+    pd->waiting_for_idle = FALSE;
+    pd->parser = json_parser_new ();
+    return pd;
+}
+
+void blocks_mode_private_data_update_destroy( BlocksModePrivateData * data ){
+    if(data->cmd_pid > 0){
+        kill(data->cmd_pid, SIGTERM);
+    }
+    if ( data->read_channel_watcher > 0 ) {
+        g_source_remove ( data->read_channel_watcher );
+    }
+    if ( data->parser ) {
+        g_object_unref ( data->parser );
+    }
+    page_data_destroy ( data->currentPageData );
+    close ( data->write_channel_fd );
+    close ( data->read_channel_fd );
+    g_free ( data->write_channel );
+    g_free ( data->read_channel );
+    g_free ( data );
+}
+
+
 
 
 void blocks_mode_private_data_update_page(BlocksModePrivateData * data){

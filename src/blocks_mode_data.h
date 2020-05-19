@@ -26,9 +26,7 @@ typedef enum {
     InputAction__FILTER_USING_ROFI
 } InputAction;
 
-const char *input_action_names;
-const size_t NUM_OF_INPUT_ACTIONS;
-
+extern const char * const input_action_names[2];
 
 typedef struct
 {
@@ -55,7 +53,9 @@ typedef struct
 
 } BlocksModePrivateData;
 
+BlocksModePrivateData * blocks_mode_private_data_update_new();
 
+void blocks_mode_private_data_update_destroy( BlocksModePrivateData * data );
 
 void blocks_mode_private_data_update_page(BlocksModePrivateData * data);
 
