@@ -88,7 +88,7 @@ statusLabels['Z']='zombie'
 # warning: if there is a custom top configuration (.toprc) surprises are to be expected
 getPidInfo(){
 	TOP="$(top_get | sed '/./,$!d')"
-	(sed -n '7p' <<< "$TOP"; grep -m1 -P "^\s+$SELECTED_PID\s+" <<< "$TOP") \
+	(sed -n '7p' <<< "$TOP"; grep -m1 -P "^\s*$SELECTED_PID\s+" <<< "$TOP") \
 		| tr -s " " \
 		| IFS=" " awk '{ for (i=1; i<=NF; i++) RtoC[i]= (RtoC[i]? RtoC[i] FS $i: $i) } END{ for (i in RtoC) print RtoC[i] }' \
 		| while IFS=" " read -r label val; do
