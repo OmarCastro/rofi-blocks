@@ -1,6 +1,8 @@
-AC_INIT([rofi-top], [1.3.1], [https://github.com/DaveDavenport/rofi/],[],[https://forum.qtools.org/])
+AC_INIT([rofi-blocks], [0.1.0], [https://github.com/OmarCastro/rofi-blocks/],)
 
 AC_CONFIG_HEADER([config.h])
+AC_REQUIRE_AUX_FILE([tap-driver.sh])
+AC_PROG_AWK
 
 
 AC_CONFIG_MACRO_DIRS([m4])
@@ -14,7 +16,7 @@ AM_SILENT_RULES([yes])
 dnl ---------------------------------------------------------------------
 dnl  Check for compiler
 dnl ---------------------------------------------------------------------
-AC_PROG_CC([clang gcc cc])
+AC_PROG_CC([gcc cc])
 
 dnl ---------------------------------------------------------------------
 dnl  C99 standard
@@ -64,5 +66,5 @@ dnl Add extra compiler flags
 dnl ---------------------------------------------------------------------
 AC_SUBST([AM_CFLAGS])
 
-AC_CONFIG_FILES([Makefile ])
+AC_CONFIG_FILES([Makefile tests/Makefile src/Makefile ])
 AC_OUTPUT
