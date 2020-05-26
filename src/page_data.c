@@ -18,6 +18,7 @@ PageData * page_data_new(){
 }
 
 void page_data_destroy(PageData * pageData){
+    page_data_clear_lines(pageData);
     g_string_free(pageData->message, TRUE);
     g_string_free(pageData->overlay, TRUE);
     g_string_free(pageData->prompt, TRUE);
@@ -33,7 +34,7 @@ size_t page_data_get_number_of_lines(PageData * pageData){
 
 
 LineData * page_data_get_line_by_index_or_else(PageData * pageData, unsigned int index, LineData * elseValue){
-	if(index >= pageData->lines->len){
+	if(pageData == NULL || index >= pageData->lines->len){
 		return elseValue;
 	}
 	LineData * result = &g_array_index (pageData->lines, LineData, index);
