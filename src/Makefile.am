@@ -10,7 +10,7 @@ blocks_la_SOURCES=\
 		page_data.c \
 		render_state.c
 
-blocks_la_CFLAGS= @glib_CFLAGS@ @rofi_CFLAGS@
-blocks_la_LIBADD= @glib_LIBS@ @rofi_LIBS@
+blocks_la_CFLAGS= @glib_CFLAGS@ @rofi_CFLAGS@ @cairo_CFLAGS@
+blocks_la_LIBADD= @glib_LIBS@ @rofi_LIBS@ @cairo_LIBS@
 blocks_la_LDFLAGS= -module -avoid-version
 
