@@ -11,7 +11,7 @@ const char * const input_action_names[2] = {
 static const size_t NUM_OF_INPUT_ACTIONS = (sizeof(input_action_names) / sizeof((input_action_names)[0]));
 
 
-static void blocks_mode_private_data_update_string(BlocksModePrivateData * data, GString * str, const char * json_root_member);
+static void blocks_mode_private_data_update_string(BlocksModePrivateData * data, GString ** str, const char * json_root_member);
 static void blocks_mode_private_data_update_input_action(BlocksModePrivateData * data);
 static void blocks_mode_private_data_update_message(BlocksModePrivateData * data);
 static void blocks_mode_private_data_update_overlay(BlocksModePrivateData * data);
@@ -82,10 +82,13 @@ void blocks_mode_private_data_update_page(BlocksModePrivateData * data){
 }
 
 
-static void blocks_mode_private_data_update_string(BlocksModePrivateData * data, GString * str, const char * json_root_member){
+static void blocks_mode_private_data_update_string(BlocksModePrivateData * data, GString ** str, const char * json_root_member){
     const gchar* memberVal = json_object_get_string_member_or_else(data->root, json_root_member, NULL);
     if(memberVal != NULL){
-        g_string_assign(str,memberVal);
+        if(*str == NULL){
+            *str = g_string_sized_new(64);
+        }
+        g_string_assign(*str,memberVal);
     }
 }
 
@@ -103,23 +106,23 @@ static void blocks_mode_private_data_update_input_action(BlocksModePrivateData *
 
 
 static void blocks_mode_private_data_update_message(BlocksModePrivateData * data){
-    blocks_mode_private_data_update_string(data, data->currentPageData->message, "message");
+    blocks_mode_private_data_update_string(data, &data->currentPageData->message, "message");
 }
 
 static void blocks_mode_private_data_update_overlay(BlocksModePrivateData * data){
-    blocks_mode_private_data_update_string(data, data->currentPageData->overlay, "overlay");
+    blocks_mode_private_data_update_string(data, &data->currentPageData->overlay, "overlay");
 }
 
 static void blocks_mode_private_data_update_prompt(BlocksModePrivateData * data){
-    blocks_mode_private_data_update_string(data, data->currentPageData->prompt, "prompt");
+    blocks_mode_private_data_update_string(data, &data->currentPageData->prompt, "prompt");
 }
 
 static void blocks_mode_private_data_update_input(BlocksModePrivateData * data){
-    blocks_mode_private_data_update_string(data, data->currentPageData->input, "input");
+    blocks_mode_private_data_update_string(data, &data->currentPageData->input, "input");
 }
 
 static void blocks_mode_private_data_update_input_format(BlocksModePrivateData * data){
-    blocks_mode_private_data_update_string(data, data->input_format, "event format");
+    blocks_mode_private_data_update_string(data, &data->input_format, "event format");
 }
 
 static void blocks_mode_private_data_update_close_on_child_exit(BlocksModePrivateData * data){

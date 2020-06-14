@@ -10,9 +10,9 @@ static const gchar* EMPTY_STRING = "";
 PageData * page_data_new(){
     PageData * pageData = g_malloc0( sizeof ( *pageData ) );
     pageData->message = g_string_sized_new(256);
-    pageData->overlay = g_string_sized_new(64);
-    pageData->prompt = g_string_sized_new(64);
-    pageData->input = g_string_sized_new(64);
+    pageData->overlay = NULL;
+    pageData->prompt = NULL;
+    pageData->input = g_string_sized_new(256);
     pageData->lines = g_array_new (FALSE, TRUE, sizeof (LineData));
     return pageData;
 }
@@ -20,8 +20,8 @@ PageData * page_data_new(){
 void page_data_destroy(PageData * pageData){
     page_data_clear_lines(pageData);
     g_string_free(pageData->message, TRUE);
-    g_string_free(pageData->overlay, TRUE);
-    g_string_free(pageData->prompt, TRUE);
+    pageData->overlay != NULL && g_string_free(pageData->overlay, TRUE);
+    pageData->prompt != NULL && g_string_free(pageData->prompt, TRUE);
     g_string_free(pageData->input, TRUE);
     g_array_free (pageData->lines, TRUE);
     g_free(pageData);

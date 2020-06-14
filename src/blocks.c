@@ -113,9 +113,12 @@ void blocks_mode_private_data_write_to_channel ( BlocksModePrivateData * data, E
 void blocks_mode_verify_input_change ( BlocksModePrivateData * data, const char * new_input_value){
     PageData * pageData = data->currentPageData;
     GString * inputStr = pageData->input;
-    if(data->input_action == InputAction__SEND_ACTION && g_strcmp0(inputStr->str, new_input_value) != 0){
+    bool inputChanged = g_strcmp0(inputStr->str, new_input_value) != 0;
+    if(inputChanged){
         g_string_assign(inputStr, new_input_value);
-        blocks_mode_private_data_write_to_channel(data, Event__INPUT_CHANGE, new_input_value);
+        if(data->input_action == InputAction__SEND_ACTION ){
+            blocks_mode_private_data_write_to_channel(data, Event__INPUT_CHANGE, new_input_value);
+        }
     }
 }
 
@@ -169,41 +172,48 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
     }
 
     if(newline){
-        GString * oldOverlay = g_string_new(data->currentPageData->overlay->str);
-        GString * oldPrompt = g_string_new(data->currentPageData->prompt->str);
-        GString * oldInput = g_string_new(data->currentPageData->input->str);
-        
+        GString * overlay = data->currentPageData->overlay;
+        GString * prompt = data->currentPageData->prompt;
+        GString * input = data->currentPageData->input;
+
+        GString * oldOverlay = overlay == NULL ? NULL : g_string_new(overlay->str);
+        GString * oldPrompt = prompt == NULL ? NULL : g_string_new(prompt->str);
+        GString * oldInput = input == NULL ? NULL : g_string_new(input->str);
+
         blocks_mode_private_data_update_page(data);
         
+
         GString * newOverlay = data->currentPageData->overlay;
         GString * newPrompt = data->currentPageData->prompt;
         GString * newInput = data->currentPageData->input;
 
-        if(!g_string_equal(oldOverlay, newOverlay)){
+        bool overlayChanged = newOverlay != NULL && (oldOverlay == NULL || !g_string_equal(oldOverlay, newOverlay));
+        bool promptChanged = newPrompt != NULL && (oldPrompt == NULL || !g_string_equal(oldPrompt, newPrompt));
+        bool inputChanged = newInput != NULL && (oldInput == NULL || !g_string_equal(oldInput, newInput));
+
+
+        if(overlayChanged){
             RofiViewState * state = rofi_view_get_active();
             rofi_view_set_overlay(state, (newOverlay->len > 0) ? newOverlay->str : NULL);
         }
-        if(!g_string_equal(oldPrompt, newPrompt)){
 
-            if(sw->display_name != NULL){
-                g_free ( sw->display_name );
-            }
-            sw->display_name = g_strdup  ( newPrompt->str );
+        if(promptChanged){
+            g_free ( sw->display_name );
+            sw->display_name = g_strdup ( newPrompt->str );
             // rofi_view_reload does not update prompt, that is why this is needed
             rofi_view_switch_mode ( state, sw );
         }
 
-        if(!g_string_equal(oldInput, newInput)){
-
+        if(inputChanged){
             RofiViewState * rofiViewState = rofi_view_get_active();
             rofi_view_clear_input(rofiViewState);
             rofi_view_handle_text(rofiViewState, newInput->str);
         }
 
 
-        g_string_free(oldOverlay, TRUE);
-        g_string_free(oldPrompt, TRUE);
-        g_string_free(oldInput, TRUE);
+        oldOverlay != NULL && g_string_free(oldOverlay, TRUE);
+        oldPrompt != NULL && g_string_free(oldPrompt, TRUE);
+        oldInput != NULL && g_string_free(oldInput, TRUE);
 
 
         g_debug("reloading rofi view");
