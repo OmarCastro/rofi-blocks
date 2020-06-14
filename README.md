@@ -101,6 +101,7 @@ The JSON format used to communicate with the modi is the one on the next figure,
 | message 	   | Sets rofi message                                    |
 | overlay      | Shows overlay with text, hides it if empty or null   |
 | prompt       | sets prompt text                                     |
+| input        | sets input text, to clear use empty string           |
 | input action | Sets input change action only two values are accepted, any other is ignored. <br> **filter***(default)*: rofi filters the content, no event is sent to program input <br> **send**: prevents rofi filter and sends an "*input change*" event to program input |
 | event format | event format used to send to input, more of it on next section |
 | lines        | a list of sting or json object to set rofi list content, a string will show a text with all flags disabled.  |
