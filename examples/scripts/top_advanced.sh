@@ -129,7 +129,7 @@ printNextTick(){
 	if [[ -z "$SELECTED_PID" ]]; then
 
 		TOP="$(top_get | sed '/./,$!d')"
-		TOP_INFO="$(sed -n '1,/^\s*PID/p' <<< "$TOP" | sort_message)"
+		TOP_INFO="$(sed '/^\s*PID/q' <<< "$TOP" | sort_message)"
 		TOP_PIDLIST="$(sed '1,/^\s*PID/d' <<< "$TOP" | sort_list)"
 		JSON_LINES="$(toLinesJson "$TOP_PIDLIST")"
 		JSON_MESSAGE="$(toStringJson "$TOP_INFO")"
