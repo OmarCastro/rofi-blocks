@@ -9,7 +9,7 @@ static const gchar* EMPTY_STRING = "";
 
 PageData * page_data_new(){
     PageData * pageData = g_malloc0( sizeof ( *pageData ) );
-    pageData->message = g_string_sized_new(256);
+    pageData->message = NULL;
     pageData->overlay = NULL;
     pageData->prompt = NULL;
     pageData->input = g_string_sized_new(256);
@@ -19,13 +19,47 @@ PageData * page_data_new(){
 
 void page_data_destroy(PageData * pageData){
     page_data_clear_lines(pageData);
-    g_string_free(pageData->message, TRUE);
+    pageData->message != NULL && g_string_free(pageData->message, TRUE);
     pageData->overlay != NULL && g_string_free(pageData->overlay, TRUE);
     pageData->prompt != NULL && g_string_free(pageData->prompt, TRUE);
     g_string_free(pageData->input, TRUE);
     g_array_free (pageData->lines, TRUE);
     g_free(pageData);
 }
+
+
+
+static gboolean is_page_data_string_member_empty(GString *string_member);
+static const char * get_page_data_string_member_or_empty_string(GString *string_member);
+static void set_page_data_string_member(GString **string_member, const char * new_string);
+
+
+
+gboolean page_data_is_message_empty(PageData * pageData){
+	return pageData == NULL ? TRUE : is_page_data_string_member_empty(pageData->message);
+}
+
+const char * page_data_get_message_or_empty_string(PageData * pageData){
+	return pageData == NULL ? EMPTY_STRING : get_page_data_string_member_or_empty_string(pageData->message);
+}
+
+void page_data_set_message(PageData * pageData, const char * message){
+	set_page_data_string_member(&pageData->message, message);
+}
+
+gboolean page_data_is_overlay_empty(PageData * pageData){
+	return pageData == NULL ? TRUE : is_page_data_string_member_empty(pageData->overlay);
+}
+
+const char * page_data_get_overlay_or_empty_string(PageData * pageData){
+	return pageData == NULL ? EMPTY_STRING : get_page_data_string_member_or_empty_string(pageData->overlay);
+}
+
+void page_data_set_overlay(PageData * pageData, const char * overlay){
+	set_page_data_string_member(&pageData->overlay, overlay);
+}
+
+
 
 
 size_t page_data_get_number_of_lines(PageData * pageData){
@@ -49,7 +83,7 @@ void page_data_add_line(PageData * pageData, const gchar * label, gboolean urgen
 
 void page_data_add_line_json_node(PageData * pageData, JsonNode * element){
     if(JSON_NODE_HOLDS_VALUE(element) && json_node_get_value_type(element) == G_TYPE_STRING){
-        page_data_add_line(pageData, json_node_get_string(element), FALSE, FALSE, pageData->markup_default);
+        page_data_add_line(pageData, json_node_get_string(element), FALSE, FALSE, pageData->markup_default != MarkupStatus_DISABLED);
     } else if(JSON_NODE_HOLDS_OBJECT(element)){
         JsonObject * line_obj = json_node_get_object(element);
         JsonNode * text_node = json_object_get_member(line_obj, "text");
@@ -59,7 +93,7 @@ void page_data_add_line_json_node(PageData * pageData, JsonNode * element){
         const gchar * text = json_node_get_string_or_else(text_node, EMPTY_STRING);
         gboolean urgent = json_node_get_boolean_or_else(urgent_node, FALSE);
         gboolean highlight = json_node_get_boolean_or_else(highlight_node, FALSE);
-        gboolean markup = json_node_get_boolean_or_else(markup_node, pageData->markup_default);
+        gboolean markup = json_node_get_boolean_or_else(markup_node, pageData->markup_default != MarkupStatus_DISABLED);
         page_data_add_line(pageData, text, urgent, highlight, markup);
     }
 }
@@ -72,4 +106,30 @@ void page_data_clear_lines(PageData * pageData){
         g_free(line.text);
     }
     g_array_set_size(pageData->lines, 0);
+}
+
+
+
+static gboolean is_page_data_string_member_empty(GString *string_member){
+	return string_member == NULL || string_member->len <= 0;
+}
+
+static const char * get_page_data_string_member_or_empty_string(GString *string_member){
+	return string_member == NULL ?  EMPTY_STRING : string_member->str;
+}
+
+static void set_page_data_string_member(GString **string_member, const char * new_string){
+	gboolean isDefined = *string_member != NULL;
+	gboolean willDefine = new_string != NULL;
+
+	if( isDefined && willDefine ){
+        g_string_assign(*string_member, new_string);
+	} else if( isDefined && !willDefine ){
+	    g_string_free(*string_member, TRUE);
+	    *string_member = NULL;
+	} else if ( !isDefined && willDefine ){
+		*string_member = g_string_new (new_string);
+	} 
+	//else do nothing, *string_member is already NULL
+
 }

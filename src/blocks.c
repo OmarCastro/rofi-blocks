@@ -172,22 +172,21 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
     }
 
     if(newline){
-        GString * overlay = data->currentPageData->overlay;
+        GString * oldOverlay = g_string_new(page_data_get_overlay_or_empty_string(data->currentPageData));
         GString * prompt = data->currentPageData->prompt;
         GString * input = data->currentPageData->input;
 
-        GString * oldOverlay = overlay == NULL ? NULL : g_string_new(overlay->str);
         GString * oldPrompt = prompt == NULL ? NULL : g_string_new(prompt->str);
         GString * oldInput = input == NULL ? NULL : g_string_new(input->str);
 
         blocks_mode_private_data_update_page(data);
         
 
-        GString * newOverlay = data->currentPageData->overlay;
+        GString * newOverlay = g_string_new(page_data_get_overlay_or_empty_string(data->currentPageData));
         GString * newPrompt = data->currentPageData->prompt;
         GString * newInput = data->currentPageData->input;
 
-        bool overlayChanged = newOverlay != NULL && (oldOverlay == NULL || !g_string_equal(oldOverlay, newOverlay));
+        bool overlayChanged = !g_string_equal(oldOverlay, newOverlay);
         bool promptChanged = newPrompt != NULL && (oldPrompt == NULL || !g_string_equal(oldPrompt, newPrompt));
         bool inputChanged = newInput != NULL && (oldInput == NULL || !g_string_equal(oldInput, newInput));
 
@@ -211,7 +210,8 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
         }
 
 
-        oldOverlay != NULL && g_string_free(oldOverlay, TRUE);
+        g_string_free(oldOverlay, TRUE);
+        g_string_free(newOverlay, TRUE);
         oldPrompt != NULL && g_string_free(oldPrompt, TRUE);
         oldInput != NULL && g_string_free(oldInput, TRUE);
 
@@ -448,7 +448,7 @@ static char * blocks_mode_get_message ( const Mode *sw )
 {
     g_debug("%s", "blocks_mode_get_message");
     PageData * pageData = mode_get_private_data_current_page( sw );
-    gchar* result = g_strdup(pageData->message->str);
+    gchar* result = page_data_is_message_empty(pageData) ? NULL : g_strdup(page_data_get_message_or_empty_string(pageData));
     return result;
 }
 

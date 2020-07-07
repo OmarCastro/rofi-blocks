@@ -3,14 +3,19 @@
 
 #ifndef ROFI_BLOCKS_PAGE_DATA_H
 #define ROFI_BLOCKS_PAGE_DATA_H
-
 #include <gmodule.h>
-#include <json-glib/json-glib.h>
 
+typedef enum 
+{
+	MarkupStatus_UNDEFINED = 0,
+	MarkupStatus_ENABLED = 1,
+	MarkupStatus_DISABLED = 2
+
+} MarkupStatus;
 
 typedef struct
 {
-    gboolean markup_default;
+    MarkupStatus markup_default;
     GString *message;
     GString *overlay;
     GString *prompt;
@@ -29,6 +34,19 @@ typedef struct
 PageData * page_data_new();
 
 void page_data_destroy(PageData * pageData);
+
+const char * page_data_get_message_or_empty_string(PageData * pageData);
+
+gboolean page_data_is_message_empty(PageData * pageData);
+
+void page_data_set_message(PageData * pageData, const char * message);
+
+const char * page_data_get_overlay_or_empty_string(PageData * pageData);
+
+gboolean page_data_is_overlay_empty(PageData * pageData);
+
+void page_data_set_overlay(PageData * pageData, const char * overlay);
+
 
 size_t page_data_get_number_of_lines(PageData * pageData);
 

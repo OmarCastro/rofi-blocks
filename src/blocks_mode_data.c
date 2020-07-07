@@ -9,6 +9,7 @@ const char * const input_action_names[2] = {
 };
 
 static const size_t NUM_OF_INPUT_ACTIONS = (sizeof(input_action_names) / sizeof((input_action_names)[0]));
+static const char * UNDEFINED = "";
 
 
 static void blocks_mode_private_data_update_string(BlocksModePrivateData * data, GString ** str, const char * json_root_member);
@@ -26,7 +27,7 @@ static void blocks_mode_private_data_update_lines(BlocksModePrivateData * data);
 BlocksModePrivateData * blocks_mode_private_data_update_new(){
     BlocksModePrivateData *pd = g_malloc0 ( sizeof ( *pd ) );
     pd->currentPageData = page_data_new();
-    pd->currentPageData->markup_default = TRUE;
+    pd->currentPageData->markup_default = MarkupStatus_UNDEFINED;
     pd->input_format = g_string_new("{\"name\":\"{{name_escaped}}\", \"value\":\"{{value_escaped}}\"}");
     pd->input_action = InputAction__FILTER_USING_ROFI;
     pd->close_on_child_exit = TRUE;
@@ -106,11 +107,17 @@ static void blocks_mode_private_data_update_input_action(BlocksModePrivateData *
 
 
 static void blocks_mode_private_data_update_message(BlocksModePrivateData * data){
-    blocks_mode_private_data_update_string(data, &data->currentPageData->message, "message");
+    const gchar* memberVal = json_object_get_nullable_string_member_or_else(data->root, "message", UNDEFINED);
+    if(memberVal != UNDEFINED){
+        page_data_set_message(data->currentPageData, memberVal);
+    }
 }
 
 static void blocks_mode_private_data_update_overlay(BlocksModePrivateData * data){
-    blocks_mode_private_data_update_string(data, &data->currentPageData->overlay, "overlay");
+    const gchar* memberVal = json_object_get_nullable_string_member_or_else(data->root, "overlay", UNDEFINED);
+    if(memberVal != UNDEFINED){
+        page_data_set_overlay(data->currentPageData, memberVal);
+    }
 }
 
 static void blocks_mode_private_data_update_prompt(BlocksModePrivateData * data){

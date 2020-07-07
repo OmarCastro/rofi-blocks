@@ -98,7 +98,7 @@ The JSON format used to communicate with the modi is the one on the next figure,
 
 | Property     | Description                                          |
 |--------------|------------------------------------------------------|
-| message 	   | Sets rofi message                                    |
+| message 	   | Sets rofi message, hides it if empty or null         |
 | overlay      | Shows overlay with text, hides it if empty or null   |
 | prompt       | sets prompt text                                     |
 | input        | sets input text, to clear use empty string           |
