@@ -36,65 +36,68 @@ static void set_page_data_string_member(GString **string_member, const char * ne
 
 
 gboolean page_data_is_message_empty(PageData * pageData){
-	return pageData == NULL ? TRUE : is_page_data_string_member_empty(pageData->message);
+    return pageData == NULL ? TRUE : is_page_data_string_member_empty(pageData->message);
 }
 
 const char * page_data_get_message_or_empty_string(PageData * pageData){
-	return pageData == NULL ? EMPTY_STRING : get_page_data_string_member_or_empty_string(pageData->message);
+    return pageData == NULL ? EMPTY_STRING : get_page_data_string_member_or_empty_string(pageData->message);
 }
 
 void page_data_set_message(PageData * pageData, const char * message){
-	set_page_data_string_member(&pageData->message, message);
+    set_page_data_string_member(&pageData->message, message);
 }
 
 gboolean page_data_is_overlay_empty(PageData * pageData){
-	return pageData == NULL ? TRUE : is_page_data_string_member_empty(pageData->overlay);
+    return pageData == NULL ? TRUE : is_page_data_string_member_empty(pageData->overlay);
 }
 
 const char * page_data_get_overlay_or_empty_string(PageData * pageData){
-	return pageData == NULL ? EMPTY_STRING : get_page_data_string_member_or_empty_string(pageData->overlay);
+    return pageData == NULL ? EMPTY_STRING : get_page_data_string_member_or_empty_string(pageData->overlay);
 }
 
 void page_data_set_overlay(PageData * pageData, const char * overlay){
-	set_page_data_string_member(&pageData->overlay, overlay);
+    set_page_data_string_member(&pageData->overlay, overlay);
 }
 
 
 
 
 size_t page_data_get_number_of_lines(PageData * pageData){
-	return pageData->lines->len;
+    return pageData->lines->len;
 }
 
 
 LineData * page_data_get_line_by_index_or_else(PageData * pageData, unsigned int index, LineData * elseValue){
-	if(pageData == NULL || index >= pageData->lines->len){
-		return elseValue;
-	}
-	LineData * result = &g_array_index (pageData->lines, LineData, index);
-	return result;
+    if(pageData == NULL || index >= pageData->lines->len){
+        return elseValue;
+    }
+    LineData * result = &g_array_index (pageData->lines, LineData, index);
+    return result;
 }
 
 
-void page_data_add_line(PageData * pageData, const gchar * label, gboolean urgent, gboolean highlight, gboolean markup){
-    LineData line = { .text = g_strdup(label), .urgent = urgent, .highlight = highlight, .markup = markup };
+void page_data_add_line(PageData * pageData, const gchar * label, const gchar * icon, gboolean urgent, gboolean highlight, gboolean markup){
+    LineData line = {
+        .text = g_strdup(label),
+        .icon = g_strdup(icon),
+        .urgent = urgent,
+        .highlight = highlight,
+        .markup = markup
+    };
     g_array_append_val(pageData->lines, line);
 }
 
 void page_data_add_line_json_node(PageData * pageData, JsonNode * element){
     if(JSON_NODE_HOLDS_VALUE(element) && json_node_get_value_type(element) == G_TYPE_STRING){
-        page_data_add_line(pageData, json_node_get_string(element), FALSE, FALSE, pageData->markup_default == MarkupStatus_ENABLED);
+        page_data_add_line(pageData, json_node_get_string(element), EMPTY_STRING, FALSE, FALSE, pageData->markup_default == MarkupStatus_ENABLED);
     } else if(JSON_NODE_HOLDS_OBJECT(element)){
         JsonObject * line_obj = json_node_get_object(element);
-        JsonNode * text_node = json_object_get_member(line_obj, "text");
-        JsonNode * urgent_node = json_object_get_member(line_obj, "urgent");
-        JsonNode * highlight_node = json_object_get_member(line_obj, "highlight");
-        JsonNode * markup_node = json_object_get_member(line_obj, "markup");
-        const gchar * text = json_node_get_string_or_else(text_node, EMPTY_STRING);
-        gboolean urgent = json_node_get_boolean_or_else(urgent_node, FALSE);
-        gboolean highlight = json_node_get_boolean_or_else(highlight_node, FALSE);
-        gboolean markup = json_node_get_boolean_or_else(markup_node, pageData->markup_default == MarkupStatus_ENABLED);
-        page_data_add_line(pageData, text, urgent, highlight, markup);
+        const gchar * text = json_object_get_string_member_or_else(line_obj, "text", EMPTY_STRING);
+        const gchar * icon = json_object_get_string_member_or_else(line_obj, "icon", EMPTY_STRING);
+        gboolean urgent = json_object_get_boolean_member_or_else(line_obj, "urgent", FALSE);
+        gboolean highlight = json_object_get_boolean_member_or_else(line_obj, "highlight", FALSE);
+        gboolean markup = json_object_get_boolean_member_or_else(line_obj, "markup", pageData->markup_default == MarkupStatus_ENABLED);
+        page_data_add_line(pageData, text, icon, urgent, highlight, markup);
     }
 }
 
@@ -111,25 +114,25 @@ void page_data_clear_lines(PageData * pageData){
 
 
 static gboolean is_page_data_string_member_empty(GString *string_member){
-	return string_member == NULL || string_member->len <= 0;
+    return string_member == NULL || string_member->len <= 0;
 }
 
 static const char * get_page_data_string_member_or_empty_string(GString *string_member){
-	return string_member == NULL ?  EMPTY_STRING : string_member->str;
+    return string_member == NULL ?  EMPTY_STRING : string_member->str;
 }
 
 static void set_page_data_string_member(GString **string_member, const char * new_string){
-	gboolean isDefined = *string_member != NULL;
-	gboolean willDefine = new_string != NULL;
+    gboolean isDefined = *string_member != NULL;
+    gboolean willDefine = new_string != NULL;
 
-	if( isDefined && willDefine ){
+    if( isDefined && willDefine ){
         g_string_assign(*string_member, new_string);
-	} else if( isDefined && !willDefine ){
-	    g_string_free(*string_member, TRUE);
-	    *string_member = NULL;
-	} else if ( !isDefined && willDefine ){
-		*string_member = g_string_new (new_string);
-	} 
-	//else do nothing, *string_member is already NULL
+    } else if( isDefined && !willDefine ){
+        g_string_free(*string_member, TRUE);
+        *string_member = NULL;
+    } else if ( !isDefined && willDefine ){
+        *string_member = g_string_new (new_string);
+    } 
+    //else do nothing, *string_member is already NULL
 
 }

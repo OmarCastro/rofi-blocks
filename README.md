@@ -89,7 +89,8 @@ The JSON format used to communicate with the modi is the one on the next figure,
     {"text":"with object, you can use flags", "urgent":true},
     {"text":"such as urgent and highlight", "highlight": true},
     {"text":"as well as markup", "markup": true},
-    {"text":"or both", "urgent":true, "highlight": true, "markup":true}
+    {"text":"or both", "urgent":true, "highlight": true, "markup":true},
+    {"text":"you can put an icon too", "icon": "folder"},
   ]
 }
 ```

@@ -4,13 +4,12 @@
 #ifndef ROFI_BLOCKS_PAGE_DATA_H
 #define ROFI_BLOCKS_PAGE_DATA_H
 #include <gmodule.h>
-
+#include <stdint.h>
 typedef enum 
 {
 	MarkupStatus_UNDEFINED = 0,
 	MarkupStatus_ENABLED = 1,
 	MarkupStatus_DISABLED = 2
-
 } MarkupStatus;
 
 typedef struct
@@ -26,9 +25,11 @@ typedef struct
 typedef struct
 {
     gchar *text;
+    gchar *icon;
     gboolean urgent;
     gboolean highlight;
     gboolean markup;
+    uint32_t icon_fetch_uid; //cache icon uid
 } LineData;
 
 PageData * page_data_new();
@@ -52,7 +53,7 @@ size_t page_data_get_number_of_lines(PageData * pageData);
 
 LineData * page_data_get_line_by_index_or_else(PageData * pageData, unsigned int index, LineData * elseValue);
 
-void page_data_add_line(PageData * pageData, const gchar * label, gboolean urgent, gboolean highlight, gboolean markup);
+void page_data_add_line(PageData * pageData, const gchar * label, const gchar * icon, gboolean urgent, gboolean highlight, gboolean markup);
 
 void page_data_add_line_json_node(PageData * pageData, JsonNode * element);
 

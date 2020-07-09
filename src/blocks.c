@@ -11,6 +11,7 @@
 #include <rofi/mode.h>
 #include <rofi/helper.h>
 #include <rofi/mode-private.h>
+#include <rofi/rofi-icon-fetcher.h>
 
 #include <glib-object.h>
 #include <json-glib/json-glib.h>
@@ -409,7 +410,21 @@ static void blocks_mode_destroy ( Mode *sw )
 }
 
  static cairo_surface_t * blocks_mode_get_icon ( const Mode *sw, unsigned int selected_line, int height ){
+    PageData * pageData = mode_get_private_data_current_page( sw );
+    LineData * lineData = page_data_get_line_by_index_or_else(pageData, selected_line, NULL);
+    if(lineData == NULL){
+        return NULL;
+    }
 
+    const gchar * icon = lineData->icon;
+    if(icon == NULL || icon[0] == '\0'){
+        return NULL;
+    }
+
+    if(lineData->icon_fetch_uid <= 0){
+        lineData->icon_fetch_uid = rofi_icon_fetcher_query ( icon, height );
+    } 
+    return rofi_icon_fetcher_get ( lineData->icon_fetch_uid );
  }
 
 
@@ -477,7 +492,7 @@ Mode mode =
     ._result            = blocks_mode_result,
     ._destroy           = blocks_mode_destroy,
     ._token_match       = blocks_mode_token_match,
-   // ._get_icon          = blocks_mode_get_icon;
+    ._get_icon          = blocks_mode_get_icon,
     ._get_display_value = blocks_mode_get_display_value,
     ._get_message       = blocks_mode_get_message,
     ._get_completion    = NULL,

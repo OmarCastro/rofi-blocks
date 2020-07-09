@@ -17,6 +17,7 @@ while printf ''; do
 		{"text":"json with highlight flag", "highlight": true},
         {"text":"multi-byte unicode: •"},
         {"text":"icon unicode character: 😀"},
+        {"text":"folder icon", "icon":"folder"},
 		{"text":"json <i>with</i> <b>markup</b> <b><i>flag</i></b>", "markup": true},
 		{"text":"json <i>toggling</i> <b>markup</b> flag", "markup": $toggleMarkup},
 		{"text":"json <i>without</i> <b>markup</b> <b><i>flag</i></b>", "markup": false},
@@ -31,4 +32,4 @@ EOF
  	sleep 1;
  	if [ "$toggleMarkup" = "true" ]; then toggleMarkup="false"; else toggleMarkup="true"; fi
 
-done | rofi -modi blocks -show blocks "$@" 
+done | rofi -modi blocks -show blocks -show-icons "$@" 
