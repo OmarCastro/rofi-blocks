@@ -83,7 +83,7 @@ void page_data_add_line(PageData * pageData, const gchar * label, gboolean urgen
 
 void page_data_add_line_json_node(PageData * pageData, JsonNode * element){
     if(JSON_NODE_HOLDS_VALUE(element) && json_node_get_value_type(element) == G_TYPE_STRING){
-        page_data_add_line(pageData, json_node_get_string(element), FALSE, FALSE, pageData->markup_default != MarkupStatus_DISABLED);
+        page_data_add_line(pageData, json_node_get_string(element), FALSE, FALSE, pageData->markup_default == MarkupStatus_ENABLED);
     } else if(JSON_NODE_HOLDS_OBJECT(element)){
         JsonObject * line_obj = json_node_get_object(element);
         JsonNode * text_node = json_object_get_member(line_obj, "text");
@@ -93,7 +93,7 @@ void page_data_add_line_json_node(PageData * pageData, JsonNode * element){
         const gchar * text = json_node_get_string_or_else(text_node, EMPTY_STRING);
         gboolean urgent = json_node_get_boolean_or_else(urgent_node, FALSE);
         gboolean highlight = json_node_get_boolean_or_else(highlight_node, FALSE);
-        gboolean markup = json_node_get_boolean_or_else(markup_node, pageData->markup_default != MarkupStatus_DISABLED);
+        gboolean markup = json_node_get_boolean_or_else(markup_node, pageData->markup_default == MarkupStatus_ENABLED);
         page_data_add_line(pageData, text, urgent, highlight, markup);
     }
 }

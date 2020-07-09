@@ -285,9 +285,12 @@ static gboolean on_render_callback(gpointer context){
 static int blocks_mode_init ( Mode *sw )
 {
     if ( mode_get_private_data ( sw ) == NULL ) {
-        BlocksModePrivateData *pd = blocks_mode_private_data_update_new();
+        BlocksModePrivateData *pd = blocks_mode_private_data_new();
         mode_set_private_data ( sw, (void *) pd );
         char *cmd = NULL;
+        if (find_arg_str(CmdArg__MARKUP_ROWS, &cmd)) {
+            pd->currentPageData->markup_default = MarkupStatus_ENABLED;
+        }
         if (find_arg_str(CmdArg__BLOCKS_WRAP, &cmd)) {
             GError *error = NULL;
             int cmd_input_fd;
@@ -405,6 +408,10 @@ static void blocks_mode_destroy ( Mode *sw )
     }
 }
 
+ static cairo_surface_t * blocks_mode_get_icon ( const Mode *sw, unsigned int selected_line, int height ){
+
+ }
+
 
 
 static char * blocks_mode_get_display_value ( const Mode *sw, unsigned int selected_line, int *state, G_GNUC_UNUSED GList **attr_list, int get_entry )
@@ -470,6 +477,7 @@ Mode mode =
     ._result            = blocks_mode_result,
     ._destroy           = blocks_mode_destroy,
     ._token_match       = blocks_mode_token_match,
+   // ._get_icon          = blocks_mode_get_icon;
     ._get_display_value = blocks_mode_get_display_value,
     ._get_message       = blocks_mode_get_message,
     ._get_completion    = NULL,

@@ -24,7 +24,7 @@ static void blocks_mode_private_data_update_lines(BlocksModePrivateData * data);
 
 
 
-BlocksModePrivateData * blocks_mode_private_data_update_new(){
+BlocksModePrivateData * blocks_mode_private_data_new(){
     BlocksModePrivateData *pd = g_malloc0 ( sizeof ( *pd ) );
     pd->currentPageData = page_data_new();
     pd->currentPageData->markup_default = MarkupStatus_UNDEFINED;
