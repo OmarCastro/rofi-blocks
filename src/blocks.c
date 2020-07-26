@@ -39,6 +39,7 @@ G_MODULE_EXPORT Mode mode;
 
 
 const gchar* CmdArg__BLOCKS_WRAP = "-blocks-wrap";
+const gchar* CmdArg__BLOCKS_PROMPT = "-blocks-prompt";
 const gchar* CmdArg__MARKUP_ROWS = "-markup-rows";
 
 static const gchar* EMPTY_STRING = "";
@@ -292,6 +293,12 @@ static int blocks_mode_init ( Mode *sw )
         if (find_arg_str(CmdArg__MARKUP_ROWS, &cmd)) {
             pd->currentPageData->markup_default = MarkupStatus_ENABLED;
         }
+
+        char *prompt = NULL;
+        if (find_arg_str(CmdArg__BLOCKS_PROMPT, &prompt)) {
+            sw->display_name = g_strdup ( prompt );
+        }
+
         if (find_arg_str(CmdArg__BLOCKS_WRAP, &cmd)) {
             GError *error = NULL;
             int cmd_input_fd;
