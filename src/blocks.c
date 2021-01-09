@@ -377,7 +377,7 @@ static ModeMode blocks_mode_result ( Mode *sw, int mretv, char **input, unsigned
         retv = NEXT_DIALOG;
     } else if ( mretv & MENU_PREVIOUS ) {
         retv = PREVIOUS_DIALOG;
-    } else if ( mretv & MENU_QUICK_SWITCH ) {
+    } else if ( mretv & MENU_CUSTOM_COMMAND ) {
         if(selected_line >= pageData->lines->len){ return RELOAD_DIALOG; }
 
         retv = ( mretv & MENU_LOWER_MASK );
