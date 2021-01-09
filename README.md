@@ -1,6 +1,6 @@
 # rofi-blocks
 
-Rofi modi that allows controlling rofi content throug communication with an external program
+Rofi modi that allows controlling rofi content through communication with an external program
 
 To run this you need an up to date checkout of rofi git installed.
 
