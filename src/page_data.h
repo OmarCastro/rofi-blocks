@@ -26,6 +26,7 @@ typedef struct
 {
     gchar *text;
     gchar *icon;
+    gchar *data;
     gboolean urgent;
     gboolean highlight;
     gboolean markup;
@@ -53,7 +54,7 @@ size_t page_data_get_number_of_lines(PageData * pageData);
 
 LineData * page_data_get_line_by_index_or_else(PageData * pageData, unsigned int index, LineData * elseValue);
 
-void page_data_add_line(PageData * pageData, const gchar * label, const gchar * icon, gboolean urgent, gboolean highlight, gboolean markup);
+void page_data_add_line(PageData * pageData, const gchar * label, const gchar * icon, const gchar * data, gboolean urgent, gboolean highlight, gboolean markup);
 
 void page_data_add_line_json_node(PageData * pageData, JsonNode * element);
 

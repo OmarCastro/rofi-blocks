@@ -28,7 +28,7 @@ BlocksModePrivateData * blocks_mode_private_data_new(){
     BlocksModePrivateData *pd = g_malloc0 ( sizeof ( *pd ) );
     pd->currentPageData = page_data_new();
     pd->currentPageData->markup_default = MarkupStatus_UNDEFINED;
-    pd->input_format = g_string_new("{\"name\":\"{{name_escaped}}\", \"value\":\"{{value_escaped}}\"}");
+    pd->input_format = g_string_new("{\"name\":\"{{name_escaped}}\", \"value\":\"{{value_escaped}}\", \"data\":\"{{data_escaped}}\"}");
     pd->input_action = InputAction__FILTER_USING_ROFI;
     pd->close_on_child_exit = TRUE;
     pd->cmd_pid = 0;

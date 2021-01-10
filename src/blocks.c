@@ -92,7 +92,7 @@ unsigned int blocks_mode_rofi_view_get_current_position(RofiViewState * rofiView
 
 
 
-void blocks_mode_private_data_write_to_channel ( BlocksModePrivateData * data, Event event, const char * action_value){
+void blocks_mode_private_data_write_to_channel ( BlocksModePrivateData * data, Event event, const char * action_value, const char * action_data){
         GIOChannel * write_channel = data->write_channel;
         if(data->write_channel == NULL){
             //gets here when the script exits or there was an error loading it
@@ -102,8 +102,10 @@ void blocks_mode_private_data_write_to_channel ( BlocksModePrivateData * data, E
         gchar * format_result = str_replace(format, "{{name}}", event_labels[event]);
         format_result = str_replace_in(&format_result, "{{name_enum}}", event_enum_labels[event]);
         format_result = str_replace_in(&format_result, "{{value}}", action_value);
+        format_result = str_replace_in(&format_result, "{{data}}", action_data);
         format_result = str_replace_in_escaped(&format_result, "{{name_escaped}}", event_labels[event]);
         format_result = str_replace_in_escaped(&format_result, "{{value_escaped}}", action_value);
+        format_result = str_replace_in_escaped(&format_result, "{{data_escaped}}", action_data);
         g_debug("sending event: %s", format_result);
         gsize bytes_witten;
         g_io_channel_write_chars(write_channel, format_result, -1, &bytes_witten, &data->error);
@@ -119,7 +121,7 @@ void blocks_mode_verify_input_change ( BlocksModePrivateData * data, const char 
     if(inputChanged){
         g_string_assign(inputStr, new_input_value);
         if(data->input_action == InputAction__SEND_ACTION ){
-            blocks_mode_private_data_write_to_channel(data, Event__INPUT_CHANGE, new_input_value);
+            blocks_mode_private_data_write_to_channel(data, Event__INPUT_CHANGE, new_input_value, "");
         }
     }
 }
@@ -256,13 +258,9 @@ static void on_render(gpointer context){
      */
     if(rofiViewState != NULL){
         blocks_mode_verify_input_change(data, rofi_view_get_user_input(rofiViewState));
-        //if()
-
         g_debug("%s %i", "on_render.selected line", rofi_view_get_selected_line(rofiViewState));
         g_debug("%s %i", "on_render.next pos", rofi_view_get_next_position(rofiViewState));
         g_debug("%s %i", "on_render.active line", blocks_mode_rofi_view_get_current_position(rofiViewState, data->currentPageData));
-    
-
     }
 
 }
@@ -386,22 +384,22 @@ static ModeMode blocks_mode_result ( Mode *sw, int mretv, char **input, unsigned
         snprintf(str, 8, "%d", custom_key);
 
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
-        blocks_mode_private_data_write_to_channel(data, Event__ACTIVE_ENTRY, lineData->text);
-        blocks_mode_private_data_write_to_channel(data, Event__CUSTOM_KEY, str);
+        blocks_mode_private_data_write_to_channel(data, Event__ACTIVE_ENTRY, lineData->text, lineData->data);
+        blocks_mode_private_data_write_to_channel(data, Event__CUSTOM_KEY, str, "");
 
         retv = RELOAD_DIALOG;
     } else if ( ( mretv & MENU_OK ) ) {
         if(selected_line >= pageData->lines->len){ return RELOAD_DIALOG; }
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
-        blocks_mode_private_data_write_to_channel(data, Event__SELECT_ENTRY, lineData->text);
+        blocks_mode_private_data_write_to_channel(data, Event__SELECT_ENTRY, lineData->text, lineData->data);
         retv = RELOAD_DIALOG;
     } else if ( ( mretv & MENU_ENTRY_DELETE ) == MENU_ENTRY_DELETE ) {
         if(selected_line >= pageData->lines->len){ return RELOAD_DIALOG; }
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
-        blocks_mode_private_data_write_to_channel(data, Event__DELETE_ENTRY, lineData->text);
+        blocks_mode_private_data_write_to_channel(data, Event__DELETE_ENTRY, lineData->text, lineData->data);
         retv = RELOAD_DIALOG;
     } else if ( ( mretv & MENU_CUSTOM_INPUT ) ) {
-        blocks_mode_private_data_write_to_channel(data, Event__EXEC_CUSTOM_INPUT, *input);
+        blocks_mode_private_data_write_to_channel(data, Event__EXEC_CUSTOM_INPUT, *input, "");
         retv = RELOAD_DIALOG;
     }
     return retv;
