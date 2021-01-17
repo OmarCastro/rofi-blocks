@@ -91,6 +91,7 @@ The JSON format used to communicate with the modi is the one on the next figure,
     {"text":"as well as markup", "markup": true},
     {"text":"or both", "urgent":true, "highlight": true, "markup":true},
     {"text":"you can put an icon too", "icon": "folder"},
+    {"text":"you can put metadata that it will echo on the event", "data": "entry_number:\"8 (7 starting from 0)\"\nthis_is:yaml\nbut_it_can_be:any format"},
   ]
 }
 ```
@@ -107,13 +108,25 @@ The JSON format used to communicate with the modi is the one on the next figure,
 | event format | event format used to send to input, more of it on next section |
 | lines        | a list of sting or json object to set rofi list content, a string will show a text with all flags disabled.  |
 
+
+##### Line Property table
+
+| Property     | Description                                                                                         |
+|--------------|-----------------------------------------------------------------------------------------------------|
+| text         | entry text                                                                                          |
+| urgent       | flag: defines entry as urgent                                                                       |
+| highlight    | flag: highlight the entry                                                                           |
+| markup       | flag: enables/disables highlight. if not defined, rofi config is used (enabled with `-markup-rows`) |
+| icon         | entry icon                                                                                          |
+| data         | entry metadata                                                                                      |
+
 #### Input format
 
 The default format that the plugin uses to write events to the program is a json object. However, there are scripting languages that does not have a builtin json parser, *shell* is one of them. For that reason, the event format is configurable by setting the "*event format*" property on output. 
 
 The default format has the following text: 
 ```json
-{"name":"{{name_escaped}}", "value":"{{value_escaped}}"}
+{"name":"{{name_escaped}}", "value":"{{value_escaped}}", "data":"{{data_escaped}}"}
 ```
 
 It contains some text wrapped with double braces {{}}. These wrapped text indicates a parameter that will be replaced by the plugin formatter. The following parameters are supported:
@@ -123,8 +136,10 @@ It contains some text wrapped with double braces {{}}. These wrapped text indica
 | name            | `{{name}}`          | name of the event                                                         |
 | name escaped    | `{{name_escaped}}`  | name of the event, escaped to be inserted on a json string                |
 | name as enum    | `{{name_enum}}`     | name of the event in all caps, separated by underscore for easier parsing |
-| value           | `{{value}}`         | information of the event: <br> - **line content** on entry select or delete <br> - **input content** on input change or exec custom input <br> - **custom key number** on custom key typed |
+| value           | `{{value}}`         | information of the event: <br> - **entry text** on entry select or delete <br> - **input content** on input change or exec custom input <br> - **custom key number** on custom key typed |
 | value escaped   | `{{value_escaped}}` | information of the event, escaped to be inserted on a json string         |
+| data            | `{{data}}`          | additional data of the event: <br> - **entry metadata** on entry select or delete <br> - **empty sting** if entry has no metadata, or on other event  |
+| data_escaped    | `{{data_escaped}}`  | additional data of the event,  escaped to be inserted on a json string    |
 
 ##### Event names:
 
