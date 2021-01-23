@@ -83,6 +83,7 @@ The JSON format used to communicate with the modi is the one on the next figure,
   "input": "input text",
   "input action": "input action, 'send' or 'filter'",
   "event format": "event format",
+  "active entry": 3,
   "lines":[
     "one line is a line from input", 
     {"text":"can be a string or object"}, 
@@ -106,6 +107,7 @@ The JSON format used to communicate with the modi is the one on the next figure,
 | input        | sets input text, to clear use empty string           |
 | input action | Sets input change action only two values are accepted, any other is ignored. <br> **filter***(default)*: rofi filters the content, no event is sent to program input <br> **send**: prevents rofi filter and sends an "*input change*" event to program input |
 | event format | event format used to send to input, more of it on next section |
+| active entry | entry to be focused/active: <br> - the first entry number is 0; <br> - a value equal or larger than the number of lines will focus the first one; <br> - negative or floating numbers are ignored.  |
 | lines        | a list of sting or json object to set rofi list content, a string will show a text with all flags disabled.  |
 
 

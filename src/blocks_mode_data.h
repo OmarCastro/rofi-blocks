@@ -33,6 +33,7 @@ typedef struct
     PageData * currentPageData;
     GString * input_format;
     InputAction input_action;
+    gint64 entry_to_focus;
 
     JsonParser *parser;
     JsonObject *root;

@@ -140,10 +140,10 @@ terminate (send SIGTERM signal)
 kill (send SIGKILL signal)"
 		JSON_LINES="$(toLinesJson "$LINES")"
 		JSON_MESSAGE="$(toStringJson "$SELECTED_PID_INFO")"
-
 	fi
 	 	TEXT=$(cat <<EOF | tr -d "\n\t"
 {
+	${ACTIVE_ENTRY}
 	"message": "${JSON_MESSAGE}",
 	"prompt": "search",
 	"lines":[${JSON_LINES}]
@@ -152,6 +152,7 @@ EOF
 )
 
 	printf '%s\n' "$TEXT"
+	ACTIVE_ENTRY=""
 }
 
 trap printNextTick USR1
@@ -164,7 +165,7 @@ while read -r line; do
 		"SELECT_ENTRY return" ) selected_pid_clear;;
 		"SELECT_ENTRY terminate (send SIGTERM signal)" ) kill -s SIGTERM "$(selected_pid_get)"; selected_pid_clear;;
 		"SELECT_ENTRY kill (send SIGKILL signal)" ) kill -s SIGKILL "$(selected_pid_get)"; selected_pid_clear;;
-		SELECT_ENTRY* ) selected_pid_set "$( tr -s " " <<< "$line" | cut -d" " -f2,2)";;
+		SELECT_ENTRY* ) ACTIVE_ENTRY='"active entry": 0,'; selected_pid_set "$( tr -s " " <<< "$line" | cut -d" " -f2,2)";;
 
 	esac
 done

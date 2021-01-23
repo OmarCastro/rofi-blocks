@@ -166,6 +166,9 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
         g_string_append_unichar(buffer, unichar);
         if( unichar == '\n' ){
             if(buffer->len > 1){ //input is not an empty line
+                if(newline){
+                    g_debug("previous line ignored since a new line is received");
+                }
                 g_debug("received new line: %s", buffer->str);
                 g_string_assign(active_line, buffer->str);
                 newline=TRUE;
@@ -176,6 +179,8 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
     }
 
     if(newline){
+        g_debug("handling received line");
+
         GString * oldOverlay = g_string_new(page_data_get_overlay_or_empty_string(data->currentPageData));
         GString * prompt = data->currentPageData->prompt;
         GString * input = data->currentPageData->input;
@@ -185,14 +190,15 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
 
         blocks_mode_private_data_update_page(data);
         
-
         GString * newOverlay = g_string_new(page_data_get_overlay_or_empty_string(data->currentPageData));
         GString * newPrompt = data->currentPageData->prompt;
         GString * newInput = data->currentPageData->input;
+        gint64 entry_to_focus = data->entry_to_focus;
 
         bool overlayChanged = !g_string_equal(oldOverlay, newOverlay);
         bool promptChanged = newPrompt != NULL && (oldPrompt == NULL || !g_string_equal(oldPrompt, newPrompt));
         bool inputChanged = newInput != NULL && (oldInput == NULL || !g_string_equal(oldInput, newInput));
+        bool willFocusToEntry = entry_to_focus >= 0;
 
 
         if(overlayChanged){
@@ -213,17 +219,20 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
             rofi_view_handle_text(rofiViewState, newInput->str);
         }
 
+        if(willFocusToEntry){
+            RofiViewState * rofiViewState = rofi_view_get_active();
+            g_debug("entry_to_focus %i", entry_to_focus);
+            rofi_view_set_selected_line(rofiViewState, (unsigned int) entry_to_focus);
+        }
 
         g_string_free(oldOverlay, TRUE);
         g_string_free(newOverlay, TRUE);
         oldPrompt != NULL && g_string_free(oldPrompt, TRUE);
         oldInput != NULL && g_string_free(oldInput, TRUE);
 
-
         g_debug("reloading rofi view");
 
         rofi_view_reload();
-
     }
 
     return G_SOURCE_CONTINUE;
