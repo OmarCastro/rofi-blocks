@@ -5,6 +5,7 @@
 #define ROFI_BLOCKS_PAGE_DATA_H
 #include <gmodule.h>
 #include <stdint.h>
+#include <json-glib/json-glib.h>
 typedef enum 
 {
 	MarkupStatus_UNDEFINED = 0,
