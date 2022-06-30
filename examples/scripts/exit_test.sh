@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
  
 ACTIONS="exit script with rofi"$'\n'\
 "exit script without closing rofi"

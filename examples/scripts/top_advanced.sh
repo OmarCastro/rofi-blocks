@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 tmp_dir=$(mktemp -d -t tmp-XXXXXXXXXX)
  

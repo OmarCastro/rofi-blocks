@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
  
 ACTIONS=""
 default_custom_format="{{name_enum}} {{value}}"
