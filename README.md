@@ -113,14 +113,15 @@ The JSON format used to communicate with the modi is the one on the next figure,
 
 ##### Line Property table
 
-| Property     | Description                                                                                         |
-|--------------|-----------------------------------------------------------------------------------------------------|
-| text         | entry text                                                                                          |
-| urgent       | flag: defines entry as urgent                                                                       |
-| highlight    | flag: highlight the entry                                                                           |
-| markup       | flag: enables/disables highlight. if not defined, rofi config is used (enabled with `-markup-rows`) |
-| icon         | entry icon                                                                                          |
-| data         | entry metadata                                                                                      |
+| Property      | Description                                                                                         |
+|---------------|-----------------------------------------------------------------------------------------------------|
+| text          | entry text                                                                                          |
+| urgent        | flag: defines entry as urgent                                                                       |
+| highlight     | flag: highlight the entry                                                                           |
+| markup        | flag: enables/disables highlight. if not defined, rofi config is used (enabled with `-markup-rows`) |
+| nonselectable | falg: if true the entry cannot activated                                                            |
+| icon          | entry icon                                                                                          |
+| data          | entry metadata                                                                                      |
 
 #### Input format
 
