@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
  
 ACTIONS="clear input"$'\n'\
 "set input as \"lorem ipsum\""$'\n'\

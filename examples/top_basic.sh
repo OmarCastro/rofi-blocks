@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 toLinesJson(){
 	echo "$1" | sed -e 's/\\/\\\\/g' -e 's/\"/\\"/g' -e 's/.*/"&"/' | paste -sd "," -
