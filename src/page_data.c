@@ -76,21 +76,22 @@ LineData * page_data_get_line_by_index_or_else(PageData * pageData, unsigned int
 }
 
 
-void page_data_add_line(PageData * pageData, const gchar * label, const gchar * icon, const gchar * data, gboolean urgent, gboolean highlight, gboolean markup){
+void page_data_add_line(PageData * pageData, const gchar * label, const gchar * icon, const gchar * data, gboolean urgent, gboolean highlight, gboolean markup, gboolean nonselectable){
     LineData line = {
         .text = g_strdup(label),
         .icon = g_strdup(icon),
         .data = g_strdup(data),
         .urgent = urgent,
         .highlight = highlight,
-        .markup = markup
+        .markup = markup,
+        .nonselectable = nonselectable
     };
     g_array_append_val(pageData->lines, line);
 }
 
 void page_data_add_line_json_node(PageData * pageData, JsonNode * element){
     if(JSON_NODE_HOLDS_VALUE(element) && json_node_get_value_type(element) == G_TYPE_STRING){
-        page_data_add_line(pageData, json_node_get_string(element), EMPTY_STRING, EMPTY_STRING, FALSE, FALSE, pageData->markup_default == MarkupStatus_ENABLED);
+        page_data_add_line(pageData, json_node_get_string(element), EMPTY_STRING, EMPTY_STRING, FALSE, FALSE, pageData->markup_default == MarkupStatus_ENABLED, FALSE);
     } else if(JSON_NODE_HOLDS_OBJECT(element)){
         JsonObject * line_obj = json_node_get_object(element);
         const gchar * text = json_object_get_string_member_or_else(line_obj, "text", EMPTY_STRING);
@@ -99,7 +100,8 @@ void page_data_add_line_json_node(PageData * pageData, JsonNode * element){
         gboolean urgent = json_object_get_boolean_member_or_else(line_obj, "urgent", FALSE);
         gboolean highlight = json_object_get_boolean_member_or_else(line_obj, "highlight", FALSE);
         gboolean markup = json_object_get_boolean_member_or_else(line_obj, "markup", pageData->markup_default == MarkupStatus_ENABLED);
-        page_data_add_line(pageData, text, icon, data, urgent, highlight, markup);
+        gboolean nonselectable = json_object_get_boolean_member_or_else(line_obj, "nonselectable", FALSE);
+        page_data_add_line(pageData, text, icon, data, urgent, highlight, markup, nonselectable);
     }
 }
 

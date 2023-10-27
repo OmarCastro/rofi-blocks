@@ -15,6 +15,7 @@ while printf ''; do
 		{"text":"json object"}, 
 		{"text":"json with urgent flag", "urgent":true},
 		{"text":"json with highlight flag", "highlight": true},
+		{"text":"json with nonselectable", "nonselectable": true},
         {"text":"multi-byte unicode: •"},
         {"text":"icon unicode character: 😀"},
         {"text":"folder icon", "icon":"folder"},

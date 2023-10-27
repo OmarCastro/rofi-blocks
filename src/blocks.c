@@ -400,6 +400,7 @@ static ModeMode blocks_mode_result ( Mode *sw, int mretv, char **input, unsigned
     } else if ( ( mretv & MENU_OK ) ) {
         if(selected_line >= pageData->lines->len){ return RELOAD_DIALOG; }
         LineData * lineData = &g_array_index (pageData->lines, LineData, selected_line);
+        if (lineData->nonselectable) { return RELOAD_DIALOG; }
         blocks_mode_private_data_write_to_channel(data, Event__SELECT_ENTRY, lineData->text, lineData->data);
         retv = RELOAD_DIALOG;
     } else if ( ( mretv & MENU_ENTRY_DELETE ) == MENU_ENTRY_DELETE ) {
