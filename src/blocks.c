@@ -221,7 +221,7 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
 
         if(willFocusToEntry){
             RofiViewState * rofiViewState = rofi_view_get_active();
-            g_debug("entry_to_focus %i", entry_to_focus);
+            g_debug("entry_to_focus %li", entry_to_focus);
             rofi_view_set_selected_line(rofiViewState, (unsigned int) entry_to_focus);
         }
 
