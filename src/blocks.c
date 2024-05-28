@@ -424,7 +424,7 @@ static void blocks_mode_destroy ( Mode *sw )
     }
 }
 
- static cairo_surface_t * blocks_mode_get_icon ( const Mode *sw, unsigned int selected_line, int height ){
+ static cairo_surface_t * blocks_mode_get_icon ( const Mode *sw, unsigned int selected_line, unsigned int height ){
     PageData * pageData = mode_get_private_data_current_page( sw );
     LineData * lineData = page_data_get_line_by_index_or_else(pageData, selected_line, NULL);
     if(lineData == NULL){
