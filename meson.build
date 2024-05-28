@@ -25,6 +25,7 @@ main_sources = [
   'src/json_glib_extensions.c',
   'src/page_data.c',
   'src/render_state.c',
+  'src/string_utils.c',
 ]
 
 message('the prefix is: ', prefix)
@@ -32,7 +33,7 @@ message('the libdir is: ', libdir)
 message('the pluginsdir is: ', pluginsdir)
 
 
-library('blocks', main_sources, dependencies: deps, install_dir:pluginsdir)
+shared_library('blocks', main_sources, dependencies: deps, install_dir:pluginsdir)
 
 
 
