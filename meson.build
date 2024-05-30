@@ -10,12 +10,14 @@ autostartdir = join_paths(sysconfdir, 'xdg', 'autostart')
 rofiDependency = dependency('rofi')
 pluginsdir = rofiDependency.get_variable('pluginsdir')
 
+
+compiler = meson.get_compiler('c')
 deps = [
   dependency('glib-2.0'),
   dependency('gmodule-2.0'),
   dependency('json-glib-1.0'),
   dependency('cairo'),
-  rofiDependency
+  dependency('rofi'),
 ]
 
 
@@ -28,12 +30,15 @@ main_sources = [
   'src/string_utils.c',
 ]
 
-message('the prefix is: ', prefix)
-message('the libdir is: ', libdir)
-message('the pluginsdir is: ', pluginsdir)
 
-
-shared_library('blocks', main_sources, dependencies: deps, install_dir:pluginsdir)
+shared_library(
+  'blocks', 
+  main_sources,
+  dependencies: deps,
+  install_dir:pluginsdir, 
+  name_prefix: '',
+  link_args: ['-Wl,--unresolved-symbols=ignore-all']
+)
 
 
 
