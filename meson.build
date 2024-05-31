@@ -37,8 +37,6 @@ shared_library(
   dependencies: deps,
   install_dir:pluginsdir, 
   name_prefix: '',
+  install: true,
   link_args: ['-Wl,--unresolved-symbols=ignore-all']
 )
-
-
-
