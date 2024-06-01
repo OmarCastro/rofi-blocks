@@ -24,7 +24,21 @@ rofi -modi blocks -show blocks -blocks-wrap /path/to/program
 
 ### Installation
 
-**Rofi-blocks** uses autotools as build system. When installing from git, the following steps should install it:
+There are 2 ways to intall **rofi-blocks**, by either using **meson** or **autotools** build system.
+
+#### Meson
+
+When cloning from git, the following steps should install it:
+
+```bash
+$ meson setup build
+$ meson compile -C build
+$ meson install -C build
+```
+
+#### Autotools
+
+Autotools can also be used as a build system, it's the first build system used to build **rofi-blocks**, however, after configuring meson build system, it became deprecated in favour of meson, it is not removed yet as to not break any backwards compatibility. The following steps should install it after cloning from git:
 
 ```bash
 $ autoreconf -i
