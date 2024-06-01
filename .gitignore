@@ -1,3 +1,7 @@
+# IDE file
+.vscode
+.cache
+
 # http://www.gnu.org/software/automake
 
 build/
@@ -7,6 +11,7 @@ Makefile.in
 /py-compile
 /test-driver
 /ylwrap
+tap-driver.sh
 
 # http://www.gnu.org/software/autoconf
 
