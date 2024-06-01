@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2020 Omar Castro
+#include <stdio.h>
+#include "json_glib_extensions.h"
 #include "blocks_mode_data.h"
 
 

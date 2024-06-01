@@ -2,13 +2,8 @@
 // Copyright (C) 2020 Omar Castro
 #ifndef ROFI_BLOCKS_MODE_DATA_H
 #define ROFI_BLOCKS_MODE_DATA_H
-#include <stdlib.h>
-#include <stdio.h>
 #include <unistd.h>
-#include <string.h>
-#include <errno.h>
 #include <gmodule.h>
-#include <time.h>
 
 
 #include <glib-object.h>
@@ -16,10 +11,8 @@
 
 #include <stdint.h>
 
-#include "string_utils.h"
 #include "render_state.h"
 #include "page_data.h"
-#include "json_glib_extensions.h"
 
 typedef enum {
     InputAction__SEND_ACTION,
