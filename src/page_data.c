@@ -19,9 +19,9 @@ PageData * page_data_new(){
 
 void page_data_destroy(PageData * pageData){
     page_data_clear_lines(pageData);
-    pageData->message != NULL && g_string_free(pageData->message, TRUE);
-    pageData->overlay != NULL && g_string_free(pageData->overlay, TRUE);
-    pageData->prompt != NULL && g_string_free(pageData->prompt, TRUE);
+    if(pageData->message != NULL) { g_string_free(pageData->message, TRUE); }
+    if(pageData->overlay != NULL) { g_string_free(pageData->overlay, TRUE); }
+    if(pageData->prompt != NULL) { g_string_free(pageData->prompt, TRUE); }
     g_string_free(pageData->input, TRUE);
     g_array_free (pageData->lines, TRUE);
     g_free(pageData);
