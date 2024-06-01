@@ -4,6 +4,7 @@
 #define G_LOG_DOMAIN    "BlocksMode"
 
 
+#include <stdio.h>
 #include <sys/types.h>
 #include <signal.h>
 #include <fcntl.h>
@@ -19,10 +20,14 @@
 #include <stdint.h>
 
 #include "string_utils.h"
-#include "render_state.h"
 #include "page_data.h"
-#include "json_glib_extensions.h"
 #include "blocks_mode_data.h"
+
+#ifdef __GNUC__
+#  define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
+#else
+#  define UNUSED(x) UNUSED_ ## x
+#endif
 
 typedef struct RofiViewState RofiViewState;
 void rofi_view_switch_mode ( RofiViewState *state, Mode *mode );
@@ -41,8 +46,6 @@ G_MODULE_EXPORT Mode mode;
 const gchar* CmdArg__BLOCKS_WRAP = "-blocks-wrap";
 const gchar* CmdArg__BLOCKS_PROMPT = "-blocks-prompt";
 const gchar* CmdArg__MARKUP_ROWS = "-markup-rows";
-
-static const gchar* EMPTY_STRING = "";
 
 typedef enum {
     Event__INPUT_CHANGE,
@@ -143,7 +146,7 @@ static PageData * mode_get_private_data_current_page(const Mode *sw){
 ********************/
 
 // GIOChannel watch, called when there is output to read from child proccess 
-static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpointer context )
+static gboolean on_new_input ( GIOChannel *source, GIOCondition UNUSED(condition), gpointer context )
 {
     Mode *sw = (Mode *) context;
     RofiViewState * state = rofi_view_get_active();
@@ -227,8 +230,8 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
 
         g_string_free(oldOverlay, TRUE);
         g_string_free(newOverlay, TRUE);
-        oldPrompt != NULL && g_string_free(oldPrompt, TRUE);
-        oldInput != NULL && g_string_free(oldInput, TRUE);
+        if(oldPrompt != NULL){ g_string_free(oldPrompt, TRUE); }
+        if(oldInput != NULL){ g_string_free(oldInput, TRUE); }
 
         g_debug("reloading rofi view");
 
@@ -242,7 +245,7 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition condition, gpoin
 static void on_child_status (GPid pid, gint status, gpointer context)
 {
     g_message ("Child %" G_PID_FORMAT " exited %s", pid,
-        g_spawn_check_exit_status (status, NULL) ? "normally" : "abnormally");
+        g_spawn_check_wait_status (status, NULL) ? "normally" : "abnormally");
     Mode *sw = (Mode *) context;
     BlocksModePrivateData *data = mode_get_private_data_extended_mode( sw );
     g_spawn_close_pid (pid);
@@ -320,7 +323,6 @@ static int blocks_mode_init ( Mode *sw )
             if ( ! g_spawn_async_with_pipes ( NULL, argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_SEARCH_PATH, NULL, NULL, &(pd->cmd_pid), &(cmd_input_fd), &(cmd_output_fd), NULL, &error)) {
                 fprintf(stderr, "Unable to exec %s\n", error->message);
                 char buffer[1024];
-                int result = 4;
                 char * cmd_escaped = str_new_escaped_for_json_string(cmd);
                 char * error_message_escaped = str_new_escaped_for_json_string(error->message);
                 snprintf(buffer, sizeof(buffer), 
