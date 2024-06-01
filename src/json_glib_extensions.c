@@ -22,7 +22,7 @@ const gchar * json_node_get_nullable_string_or_else(JsonNode * node, const gchar
            json_node_is_null(node) ? NULL : json_node_get_string_or_else(node, else_value);
 }
 
-const gint64 json_node_get_int_or_else(JsonNode * node, const gint64 else_value){
+gint64 json_node_get_int_or_else(JsonNode * node, const gint64 else_value){
     return node != NULL &&
            json_node_get_value_type(node) == G_TYPE_INT64 ?
            json_node_get_int(node) : else_value;
@@ -41,6 +41,6 @@ const gchar * json_object_get_nullable_string_member_or_else(JsonObject * node, 
     return json_node_get_nullable_string_or_else(json_object_get_member(node, member), else_value);
 }
 
-const gint64 json_object_get_int_member_or_else(JsonObject * node, const gchar * member, const gint64 else_value){
+gint64 json_object_get_int_member_or_else(JsonObject * node, const gchar * member, const gint64 else_value){
     return json_node_get_int_or_else(json_object_get_member(node, member), else_value);
 }
