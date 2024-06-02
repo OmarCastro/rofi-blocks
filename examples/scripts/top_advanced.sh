@@ -44,7 +44,7 @@ echo '{"event format": "{{name_enum}} {{value}}"}'
 
 IFS=
 
-top -c -b | while read -r line; do
+top -w 512 -c -b | while read -r line; do
 	TOP="$line"
 	while true; do
 		read -t 0.01 -r line;

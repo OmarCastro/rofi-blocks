@@ -10,7 +10,7 @@ toStringJson(){
 
 execTop(){
 	echo '{"prompt": "search"}'; 
-	top -c -b | while IFS= read -r line; do
+	top -w 512 -c -b | while IFS= read -r line; do
 		TOP="$line"
 		while true; do
 			IFS= read -t 0.01 -r line;
