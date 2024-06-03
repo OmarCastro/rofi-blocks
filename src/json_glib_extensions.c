@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 #include <gmodule.h>
-#include <json-glib/json-glib.h>
+#include "json_glib_extensions.h"
 
 gboolean json_node_get_boolean_or_else(JsonNode * node, gboolean else_value){
     return node != NULL &&
