@@ -47,7 +47,7 @@ typedef struct
 
 } BlocksModePrivateData;
 
-BlocksModePrivateData * blocks_mode_private_data_new();
+BlocksModePrivateData * blocks_mode_private_data_new(void);
 
 void blocks_mode_private_data_update_destroy( BlocksModePrivateData * data );
 

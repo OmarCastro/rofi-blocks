@@ -7,7 +7,7 @@
 
 static const gchar* EMPTY_STRING = "";
 
-PageData * page_data_new(){
+PageData * page_data_new(void){
     PageData * pageData = g_malloc0( sizeof ( *pageData ) );
     pageData->message = NULL;
     pageData->overlay = NULL;

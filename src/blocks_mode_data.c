@@ -27,7 +27,7 @@ static void blocks_mode_private_data_update_focus_entry(BlocksModePrivateData * 
 
 
 
-BlocksModePrivateData * blocks_mode_private_data_new(){
+BlocksModePrivateData * blocks_mode_private_data_new(void){
     BlocksModePrivateData *pd = g_malloc0 ( sizeof ( *pd ) );
     pd->currentPageData = page_data_new();
     pd->currentPageData->markup_default = MarkupStatus_UNDEFINED;
@@ -101,7 +101,7 @@ static void blocks_mode_private_data_update_string(BlocksModePrivateData * data,
 static void blocks_mode_private_data_update_input_action(BlocksModePrivateData * data){
     const gchar* input_action = json_object_get_string_member_or_else(data->root, "input action", NULL);
     if(input_action != NULL){
-        for (int i = 0; i < NUM_OF_INPUT_ACTIONS; ++i)
+        for (size_t i = 0; i < NUM_OF_INPUT_ACTIONS; ++i)
         {
             if(g_strcmp0(input_action, input_action_names[i]) == 0){
                 data->input_action = (InputAction) i;
@@ -154,8 +154,8 @@ static void blocks_mode_private_data_update_lines(BlocksModePrivateData * data){
     if(json_object_has_member(root, LINES_PROP)){
         JsonArray* lines = json_object_get_array_member(data->root, LINES_PROP);
         page_data_clear_lines( pageData );
-        size_t len = json_array_get_length(lines);
-        for(int index = 0; index < len; ++index){
+        guint len = json_array_get_length(lines);
+        for(guint index = 0; index < len; ++index){
             page_data_add_line_json_node(pageData, json_array_get_element(lines, index));
         }
     }

@@ -14,7 +14,7 @@ struct RenderState {
 };
 
 
-RenderState * render_state_new(){
+RenderState * render_state_new(void){
     RenderState *state = g_malloc0 ( sizeof ( *state ) );
     return state;
 }

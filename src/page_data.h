@@ -35,7 +35,7 @@ typedef struct
     uint32_t icon_fetch_uid; //cache icon uid
 } LineData;
 
-PageData * page_data_new();
+PageData * page_data_new(void);
 
 void page_data_destroy(PageData * pageData);
 

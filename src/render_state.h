@@ -9,7 +9,7 @@
 typedef struct RenderState RenderState;
 
 
-RenderState * render_state_new();
+RenderState * render_state_new(void);
 
 void render_state_destroy( RenderState * state);
 
