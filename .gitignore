@@ -2,6 +2,10 @@
 .vscode
 .cache
 
+#nodejs node_modules
+node_modules
+
+
 # http://www.gnu.org/software/automake
 
 build/
