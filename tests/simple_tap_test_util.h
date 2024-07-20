@@ -1,7 +1,6 @@
 
 #ifndef SIMPLE_TAP_TEST_UTIL_H
 #define SIMPLE_TAP_TEST_UTIL_H
-#define _GNU_SOURCE
 
 
 #include <stdio.h>
@@ -15,8 +14,10 @@ struct test_location { const char* const file; const char* const function ; cons
 struct test_true { int assertion; const char* const description; };
 #define test_true(assertVal, ...) test_true((struct test_true){ .assertion=assertVal, .description=#assertVal, __VA_ARGS__}, TEST_LOCATION() );
 
-struct test_string_equals { const char* const result; const char* const expected ; const char* const description; };
-#define test_string_equals(...) test_string_equals((struct test_string_equals){ .result=NULL, .expected=NULL, .description=#__VA_ARGS__, __VA_ARGS__}, TEST_LOCATION() );
+struct test_string_equals { const char* result; const char* const expected ; const char* const description; };
+#define test_string_equals(...) test_string_equals((struct test_string_equals){ .description=#__VA_ARGS__, __VA_ARGS__ }, TEST_LOCATION() );
+
+#define test_autofree_string_equals(...) test_autofree_string_equals((struct test_string_equals){ .description=#__VA_ARGS__, __VA_ARGS__ }, TEST_LOCATION() );
 
 
 struct test_uint_equals { unsigned int result; unsigned int expected ; const char* const description; };
@@ -43,10 +44,10 @@ static struct test_suite suite = { .testNumber = 0, .first = NULL, .last = NULL 
 
 static void print_tap(bool result, struct test_location location, const char* const description){
 	char * text;
-	char * resultText = result ?  "ok" : "not ok" ;
+	const char * resultText = result ?  "ok" : "not ok" ;
 	suite.testNumber++;
   	asprintf(&text, "%s %d [%s:%d] %s", resultText ,suite.testNumber, location.file, location.line,  description);
-	struct test_execution * new_text_execution  = malloc(sizeof(struct test_execution));
+	struct test_execution * new_text_execution  = (struct test_execution*) malloc(sizeof(struct test_execution));
 	new_text_execution->text = text;
 	new_text_execution->next = NULL;
 	if( suite.first == NULL ){
@@ -77,6 +78,12 @@ static void (test_string_equals)(struct test_string_equals parameters, struct te
     } else {
 		print_tap(result, location,  description);                                                        
     }
+}
+
+/* use parentheses to avoid macro subst */             
+static void (test_autofree_string_equals)(struct test_string_equals parameters, struct test_location location) {
+    (test_string_equals)(parameters, location);
+	free( (char*) parameters.result);
 }
 
 /* use parentheses to avoid macro subst */             

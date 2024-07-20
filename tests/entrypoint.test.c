@@ -5,15 +5,12 @@
 #include "../src/page_data.h"
  
 
-
 void page_data_unit_tests(void)
 {
-
     PageData * page_data = page_data_new();
     
     test_true(page_data != NULL);
     test_true(page_data->markup_default == false);
-
 
     test_uint_equals(.result = page_data_get_number_of_lines(page_data), .expected = 0);
 
@@ -23,7 +20,6 @@ void page_data_unit_tests(void)
     test_true(page_data_get_line_by_index_or_else(page_data, -1, NULL) == NULL);
     test_true(page_data_get_line_by_index_or_else(NULL, 0, NULL) == NULL);
     test_uint_equals(.result = page_data_get_number_of_lines(page_data), .expected = 1);
-
 
     page_data_destroy(page_data);
 }
@@ -36,31 +32,24 @@ void string_utils_unit_tests(void)
     test_true(str_replace("aaaa", NULL, NULL) == NULL);
     test_true(str_replace("aaaa", "", "bbb") == NULL);
     
-    result = str_replace("a{{aa}}a", "{{aa}}", "bb");
-    test_string_equals(.result = result, .expected = "abba", .description = "str_replace(\"a{{aa}}a\", \"{{aa}}\", \"bb\") == \"abba\"");
-    free(result);
-
-    result = str_replace("a{{aa}}a", "{{aa}}", NULL);
-    test_string_equals(.result = result, .expected = "aa", .description = "str_replace(\"a{{aa}}a\", \"{{aa}}\", NULL) == \"aa\"");
-    free(result);
-
+    test_autofree_string_equals(.result = str_replace("a{{aa}}a", "{{aa}}", "bb"), .expected = "abba");
+    
+    test_autofree_string_equals(.result = str_replace("a{{aa}}a", "{{aa}}", NULL), .expected = "aa");
 
 
     result = str_replace("a {{aa}} {{bb}} c", "{{aa}}", "lorem");
-    test_string_equals(.result = result, .expected = "a lorem {{bb}} c", .description = "(result = str_replace(\"a {{aa}} {{bb}} c\", \"{{aa}}\", \"lorem\")) == \"a lorem {{bb}} c\"");
-    test_string_equals(.result = str_replace_in(&result, "{{bb}}", "ipsum"), .expected = "a lorem ipsum c", .description = "str_replace_in(&result, \"{{bb}}\", \"ipsum\") == \"a lorem ipsum c\"");
+    test_string_equals(.result = result, .expected = "a lorem {{bb}} c");
+    test_string_equals(.result = str_replace_in(&result, "{{bb}}", "ipsum"), .expected = "a lorem ipsum c");
     free(result);
 
     result = str_replace("a {{aa}} {{bb}} c", "{{aa}}", "lorem");
     test_string_equals(
         .result = result, 
         .expected = "a lorem {{bb}} c", 
-        .description = "(result = str_replace(\"a {{aa}} {{bb}} c\", \"{{aa}}\", \"lorem\")) == \"a lorem {{bb}} c\""
     );
     test_string_equals(
         .result = str_replace_in_escaped(&result, "{{bb}}", "\\ \" \t \f \b \r\n a b"),
         .expected = "a lorem \\\\ \\\" \\t \\f \\b \\r\\n a b c", 
-        .description = "str_replace_in(&result, \"{{bb}}\", \\\\ \\\" \\t \\f \\b \\r\\n a b\") == \"a lorem \\\\\\\\ \\\\\\\" \\\\t \\\\f \\\\b \\\\r\\\\n a b c\""
     );
     free(result);
 
