@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+echo "$DIR/scripts"
+cd "$DIR/scripts" && node run.js "$@"

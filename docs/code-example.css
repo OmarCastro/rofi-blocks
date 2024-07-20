@@ -1,0 +1,183 @@
+/**
+ * a11y-dark theme for JavaScript, CSS, and HTML
+ * Based on a11y-syntax-highlighting theme: https://github.com/ericwbailey/a11y-syntax-highlighting
+ * @author Omar Castro
+ */
+
+/*
+ Light Theme
+ */
+ pre {
+    --code-color: #545454;
+    --code-bg: #fefefe;
+    --comment-color: #696969;
+    --punct-color: #545454;
+    --prop-color:#007299;
+    --bool-color:#008000;
+    --str-color:#aa5d00;
+    --oper-color:#008000;
+    --func-color:#aa5d00;
+    --kword-color:#d91e18;
+    --regex-color:#d91e18;
+ }
+ 
+ /*
+ Dark Theme
+ */
+ @media (prefers-color-scheme: dark) {
+    pre {
+        --code-color: #f8f8f2;
+        --code-bg: #2b2b2b;
+        --comment-color: #d4d0ab;
+        --punct-color: #fefefe;
+        --prop-color:#ffa07a;
+        --bool-color:#00e0e0;
+        --str-color:#abe338;
+        --oper-color:#00e0e0;
+        --func-color:#ffd700;
+        --kword-color:#00e0e0;
+        --regex-color:#ffd700;
+        }
+}
+
+ code[class*="language-"],
+ pre[class*="language-"] {
+   color: var(--code-color);
+   background: none;
+   font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+   text-align: left;
+   white-space: pre;
+   word-spacing: normal;
+   word-break: normal;
+   word-wrap: normal;
+   line-height: 1.5;
+   tab-size: 4;
+   hyphens: none;
+ }
+ 
+ /* Code blocks */
+ pre[class*="language-"] {
+   padding: 1em;
+   margin: 0.5em 0;
+   overflow: auto;
+   border-radius: 0.3em;
+ }
+ 
+ :not(pre) > code[class*="language-"],
+ pre[class*="language-"] {
+   background: var(--code-bg);
+ }
+ 
+ /* Inline code */
+ :not(pre) > code[class*="language-"] {
+   padding: 0.1em;
+   border-radius: 0.3em;
+   white-space: normal;
+ }
+
+ pre:has(code.line-numbers[class*="language-"]){
+  padding-left: 3em;
+  counter-reset: line;
+  position: relative;
+
+  &::before {
+    position: absolute;
+    inset: 0 auto 0 3em;
+    width: 1px;
+    background: var(--code-color);
+    opacity: 50%;
+    content: " ";
+  }
+
+ }
+
+ pre code.line-numbers .line{
+  counter-increment: line;
+  position: relative;
+  padding-left: 0.5em;
+  display: inline-block;
+
+  &::before {
+    content: counter(line);
+    position: absolute;
+    display: inline-block;
+    right: 100%;
+    width: 3em;
+    padding: 0 .5em;
+    text-align: right;
+    opacity: 50%;
+  }
+ }
+ 
+ code.wrap {
+  text-wrap: wrap;
+ }
+
+ .token.comment,
+ .token.prolog,
+ .token.doctype,
+ .token.cdata {
+   color: var(--comment-color);
+ }
+ 
+ .token.punctuation {
+   color: var(--punct-color);
+ }
+ 
+ .token.property,
+ .token.tag,
+ .token.constant,
+ .token.symbol,
+ .token.deleted {
+   color: var(--prop-color);
+ }
+ 
+ .token.boolean,
+ .token.number {
+   color: var(--bool-color);
+ }
+ 
+ .token.selector,
+ .token.attr-name,
+ .token.string,
+ .token.char,
+ .token.builtin,
+ .token.inserted {
+   color: var(--str-color);
+ }
+ 
+ .token.operator,
+ .token.entity,
+ .token.url,
+ .language-css .token.string,
+ .style .token.string,
+ .token.variable {
+   color: var(--oper-color);
+ }
+ 
+ .token.atrule,
+ .token.attr-value,
+ .token.function {
+   color: var(--func-color);
+ }
+ 
+ .token.keyword {
+   color: var(--kword-color);
+ }
+ 
+ .token.regex,
+ .token.important {
+   color: var(--regex-color);
+ }
+ 
+ .token.important,
+ .token.bold {
+   font-weight: bold;
+ }
+ .token.italic {
+   font-style: italic;
+ }
+ 
+ .token.entity {
+   cursor: help;
+ }
