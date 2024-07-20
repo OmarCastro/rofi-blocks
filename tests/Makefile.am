@@ -1,13 +1,9 @@
 LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/tap-driver.sh
 EXTRA_DIST = $(TESTS)
 
-TESTS = check_string_utils check_page_data
-check_PROGRAMS = check_string_utils check_page_data
+TESTS = unit_tests
+check_PROGRAMS = unit_tests
 
-check_string_utils_SOURCES = check_string_utils.c ../src/string_utils.c
-check_string_utils_CFLAGS = --coverage
-check_string_utils_LDADD = -lgcov 
-
-check_page_data_SOURCES = check_page_data.c ../src/page_data.c ../src/json_glib_extensions.c
-check_page_data_CFLAGS = @glib_CFLAGS@ --coverage
-check_page_data_LDADD = @glib_LIBS@ -lgcov 
+unit_tests_data_SOURCES = entrypoint.test.c ../src/page_data.c ../src/json_glib_extensions.c ../src/string_utils.c
+unit_tests_data_CFLAGS = @glib_CFLAGS@ --coverage
+unit_tests_data_LDADD = @glib_LIBS@ -lgcov 

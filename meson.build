@@ -30,6 +30,22 @@ main_sources = [
   'src/string_utils.c',
 ]
 
+test_sources = [
+  'src/page_data.c',
+  'src/json_glib_extensions.c',
+  'src/string_utils.c',
+]
+
+test_unit_sources            = [ 'tests/entrypoint.test.c' ] + test_sources
+
+executable('cmd-polkit-agent', main_sources,
+  dependencies: deps,
+  install: true,
+)
+
+test_env = [
+  'LC_ALL=C',
+]
 
 shared_library(
   'blocks', 
@@ -39,4 +55,12 @@ shared_library(
   name_prefix: '',
   install: true,
   link_args: ['-Wl,--unresolved-symbols=ignore-all']
+)
+
+test(
+  'test-suite-unit',
+  executable('rofi-blocks-unit', test_unit_sources, dependencies: deps),
+  env: test_env,
+  protocol: 'tap',
+  workdir: join_paths(meson.current_source_dir(), 'tests')
 )
