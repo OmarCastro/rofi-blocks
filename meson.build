@@ -38,11 +38,6 @@ test_sources = [
 
 test_unit_sources            = [ 'tests/entrypoint.test.c' ] + test_sources
 
-executable('cmd-polkit-agent', main_sources,
-  dependencies: deps,
-  install: true,
-)
-
 test_env = [
   'LC_ALL=C',
 ]
