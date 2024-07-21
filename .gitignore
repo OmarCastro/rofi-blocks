@@ -5,10 +5,13 @@
 #nodejs node_modules
 node_modules
 
+# build folders
+build/
+build-test/
+build-docs/
 
 # http://www.gnu.org/software/automake
 
-build/
 Makefile.in
 /ar-lib
 /mdate-sh
