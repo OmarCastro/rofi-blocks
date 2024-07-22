@@ -1,0 +1,85 @@
+# Contributing to "rofi-blocks"
+
+## Code of conduct
+
+ This project has adopted the Contributor Covenant as its Code of Conduct, and we expect project
+participants to adhere to it. Please read the full text so that you can understand what actions
+will and will not be tolerated.
+
+## Open Development
+
+ All work on "rofi-blocks" happens directly on GitHub. Both team members and contributors send pull
+requests which go through the same review process
+
+## Versioning Policy
+
+ "rofi-blocks" follows semantic versioning. We release patch versions for critical bugfixes, minor
+versions for new features or non-essential changes, and major versions for any breaking changes.
+ When we make breaking changes, we also introduce deprecation warnings in a minor version so that
+our users learn about the upcoming changes and migrate their code in advance.
+
+Every significant change is documented in the CHANGELOG.md file.
+
+## Branch Organization
+
+ Submit all changes directly to the main branch. We don’t use separate branches for development or
+for upcoming releases. We do our best to keep main in good shape, with all tests passing.
+
+ Code that lands in main must be compatible with the latest stable release. It may contain additional
+features, but no breaking changes. We should be able to release a new minor version from the tip of
+main at any time
+
+## Issues
+
+ We are using GitHub Issues for our bugs. We keep a close eye on this and try to make it
+clear when we have an internal fix in progress. Before filing a new task, try to make sure your
+problem does not already exist.
+
+
+## Contribution Prerequisites
+
+- You have a C compiler and meson installed at latest stable.
+- you have the following dependencies
+
+  | Dependency   | Version |
+  |--------------|---------|
+  | rofi 	       | 1.4     |
+  | json-glib    | 1.0     |
+
+- You are familiar with Git.
+- For testing, you have valgrind installed
+- For documentation: you have NodeJs installed (recommended to use the latest LTS version)
+
+## Development Workflow
+
+After cloning the project's code repository, you can run several commands that are the shell
+scripts in `dev-tools` folder.
+
+- `dev-tools/continuous-build.sh` builds the project and run tests automatically for time
+there is a code file change.
+- `dev-tools/github-action-build.sh` builds the project, tests, publishes test reports and
+builds documentation, used for github pages workflow.
+- `dev-tools/run` simply runs NodeJs scripts for documentation purposes, run 
+`dev-tools/run help` to list the scripts
+
+## Style Guide
+
+Unlike C, other languages have their own style guides to follow. So, in this project,
+the single most important rule when writing code is this: check the surrounding code and
+try to imitate it.
+
+As a maintainer, it is dismaying to receive a patch that is obviously in a different coding
+style to the surrounding code. This is disrespectful, like someone tromping into a
+spotlessly-clean house with muddy shoes.
+
+So, whatever this document recommends, if there is already written code and you are
+contributing to it, keep its current style consistent even if it is not your favorite style.
+
+Most importantly, do not make your first contribution to a project a change in the coding style
+to suit your taste. That is incredibly disrespectful.
+
+The only thing we enforce is consistency. If you wish to follow a style guide, we recommend to 
+use, the Gnome coding style 
+( https://developer.gnome.org/documentation/guidelines/programming/coding-style.html )
+as both polkit and gtk follows this style guide. We followed the same style as to maintain
+consistency with the code and API.
