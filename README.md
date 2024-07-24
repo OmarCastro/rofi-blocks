@@ -1,4 +1,18 @@
 # rofi-blocks
+<a href="https://github.com/OmarCastro/rofi-blocks" aria-label="go to Github repository" title="go to Github repository">
+<picture>
+    <img src="https://omarcastro.github.io/rofi-blocks/reports/license-badge-a11y.svg">
+</picture>
+</a><a href="https://omarcastro.github.io/rofi-blocks/reports/testlog.txt" aria-label="Show test results">
+<picture>
+    <img src="https://omarcastro.github.io/rofi-blocks/reports/test-results-badge-a11y.svg">
+</picture>
+</a><a href="https://omarcastro.github.io/rofi-blocks/reports/coveragereport" aria-label="Show test code coverage information">
+<picture>
+    <img src="https://omarcastro.github.io/rofi-blocks/reports/coverage-badge-a11y.svg">
+</picture>
+</a>
+
 
 Rofi modi that allows controlling rofi content through communication with an external program
 
