@@ -2,14 +2,18 @@
  
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
+function test-rofi(){
+    rofi -theme /usr/share/rofi/themes/gruvbox-light.rasi -font "Arial 13" -modi blocks -show blocks -blocks-wrap "$1" > /dev/null
+}
+
 
 TEST_1_NAME="rofi should open blocks modi correctly"
-rofi -theme /usr/share/rofi/themes/gruvbox-light.rasi -modi blocks -show blocks -blocks-wrap scripts/test-1.sh "$@" > /dev/null
+test-rofi scripts/test-1.sh
 TEST_1_RESULT="$(compare -fuzz 1% -metric AE ./assets/tests/test-1/expected.png ./assets/tests/test-1/result.png assets/tests/test-1/diff.png 2>&1)"
 
 
 TEST_2_NAME="active entry should work on first paint"
-rofi -theme /usr/share/rofi/themes/gruvbox-light.rasi -modi blocks -show blocks -blocks-wrap scripts/test-2.sh "$@" > /dev/null
+test-rofi scripts/test-2.sh
 TEST_2_RESULT="$(compare -fuzz 1% -metric AE ./assets/tests/test-2/expected.png ./assets/tests/test-2/result.png assets/tests/test-2/diff.png 2>&1)"
 
 
