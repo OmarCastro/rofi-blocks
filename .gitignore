@@ -10,6 +10,10 @@ build/
 build-test/
 build-docs/
 
+# UI test results
+tests/ui/assets/tests/test-*/result.png
+tests/ui/assets/tests/test-*/diff.png
+
 # http://www.gnu.org/software/automake
 
 Makefile.in

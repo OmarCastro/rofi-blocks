@@ -36,7 +36,7 @@ test_sources = [
   'src/string_utils.c',
 ]
 
-test_unit_sources            = [ 'tests/entrypoint.test.c' ] + test_sources
+test_unit_sources = [ 'tests/unit/entrypoint.test.c' ] + test_sources
 
 test_env = [
   'LC_ALL=C',
@@ -55,6 +55,15 @@ shared_library(
 test(
   'test-suite-unit',
   executable('rofi-blocks-unit', test_unit_sources, dependencies: deps),
+  env: test_env,
+  protocol: 'tap',
+  workdir: join_paths(meson.current_source_dir(), 'tests')
+)
+
+ui_test = join_paths(meson.source_root(), 'tests/ui/test.sh')
+test(
+  'test-suite-ui',
+  find_program(ui_test),
   env: test_env,
   protocol: 'tap',
   workdir: join_paths(meson.current_source_dir(), 'tests')

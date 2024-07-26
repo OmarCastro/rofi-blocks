@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: meson gcovr libjson-glib-1.0-0 libjson-glib-dev rofi rofi-dev valgrind
+          packages: meson gcovr libjson-glib-1.0-0 libjson-glib-dev rofi rofi-dev valgrind xvfb libpng-dev libjpeg-dev libtiff-dev imagemagick
           version: 1.0
       - uses: actions/setup-node@v4
         with:

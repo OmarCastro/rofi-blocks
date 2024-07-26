@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2020 Omar Castro
 #include "simple_tap_test_util.h"
-#include "../src/string_utils.h"
-#include "../src/page_data.h"
+#include "../../src/string_utils.h"
+#include "../../src/page_data.h"
  
 
 void page_data_unit_tests(void)
