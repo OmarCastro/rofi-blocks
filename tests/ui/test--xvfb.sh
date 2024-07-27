@@ -7,7 +7,10 @@ function test-rofi(){
 }
 
 function compare-result(){
-    compare -fuzz 10% -metric AE ./assets/tests/"$1"/expected.png ./assets/tests/"$1"/result.png assets/tests/"$1"/diff.png 2>&1
+    magick compare -fuzz 5% -metric MSE \
+      ./assets/tests/"$1"/expected.png \
+      ./assets/tests/"$1"/result.png \
+      ./assets/tests/"$1"/diff.png 2>&1 | sed -E 's,^[^0-9]*([0-9]+).*$,\1,'
 }
 
 
@@ -23,5 +26,5 @@ TEST_2_RESULT="$(compare-result test-2)"
 
 # report
 echo "1..2"
-if [ "$TEST_1_RESULT" = "0" ]; then echo "ok 1 - $TEST_1_NAME"; else echo "not ok 1 - $TEST_1_NAME - $TEST_1_RESULT"; fi
-if [ "$TEST_2_RESULT" = "0" ]; then echo "ok 2 - $TEST_2_NAME"; else echo "not ok 2 - $TEST_2_NAME - $TEST_2_RESULT"; fi
+if [ "$TEST_1_RESULT" -lt "2" ]; then echo "ok 1 - $TEST_1_NAME"; else echo "not ok 1 - $TEST_1_NAME - $TEST_1_RESULT"; fi
+if [ "$TEST_2_RESULT" -lt "2" ]; then echo "ok 2 - $TEST_2_NAME"; else echo "not ok 2 - $TEST_2_NAME - $TEST_2_RESULT"; fi
