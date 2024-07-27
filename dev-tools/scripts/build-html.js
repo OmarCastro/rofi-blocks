@@ -2,14 +2,16 @@
 import Prism from 'prismjs'
 import { minimatch } from 'minimatch'
 import { imageSize } from 'image-size'
-import { JSDOM } from 'jsdom'
+import { JSDOM, VirtualConsole} from 'jsdom'
 import { marked } from 'marked'
 import { existsSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { resolve, relative } from 'node:path'
 
+const virtualConsole = new VirtualConsole();
 const dom = new JSDOM('', {
   url: import.meta.url,
+  virtualConsole
 })
 /** @type {Window} */
 const window = dom.window
@@ -34,7 +36,8 @@ const docsOutputPath = new URL('build-docs', projectPath).pathname
 
 const fs = await import('fs')
 
-const data = fs.readFileSync(`${docsPath}/${process.argv[2]}`, 'utf8')
+const filePath = existsSync(`${docsPath}/${process.argv[2]}`) ? `${docsPath}/${process.argv[2]}` : `${docsOutputPath}/${process.argv[2]}`
+const data = fs.readFileSync(filePath, 'utf8')
 
 const parsed = new DOMParser().parseFromString(data, 'text/html')
 document.replaceChild(parsed.documentElement, document.documentElement)
@@ -55,7 +58,24 @@ const exampleCode = (strings, ...expr) => {
  */
 const queryAll = (selector) => [...document.documentElement.querySelectorAll(selector)]
 
-const readFileImport = (file) => existsSync(`${docsOutputPath}/${file}`) ? fs.readFileSync(`${docsOutputPath}/${file}`, 'utf8') : fs.readFileSync(`${docsPath}/${file}`, 'utf8')
+const readFileImport = (file) => {
+  const outputFilePath = `${docsOutputPath}/${file}`
+  if(existsSync(outputFilePath)){
+    return fs.readFileSync(outputFilePath, 'utf8')
+  }
+  const docFilePath = `${docsPath}/${file}`
+  if(existsSync(docFilePath)){
+    return fs.readFileSync(docFilePath, 'utf8')
+  }
+  const relativePath = new URL(file, "file://"+filePath).pathname
+  if(existsSync(relativePath)){
+    return fs.readFileSync(relativePath, 'utf8')
+  }
+  const seachedLocations = [
+    outputFilePath, docFilePath,relativePath
+  ].map(loc => " - "+loc).join('\n')
+  throw Error(`could not import file: file not found. \nhref: ${file}\nfile path: ${filePath} \nLocations seached \n${seachedLocations}`)
+}
 
 const promises = []
 
@@ -69,6 +89,13 @@ const exampleCodeClass = (element) => {
   const wrapClass = classList.contains("wrap") ? " wrap" : ''
   return "keep-markup" + lineNoClass + wrapClass
 }
+
+queryAll('script[ss:include]').forEach(element => {
+  const ssInclude = element.getAttribute('ss:include')
+  const text = readFileImport(ssInclude)
+  element.textContent = text
+  element.removeAttribute('ss:include')
+})
 
 queryAll('script.html-example').forEach(element => {
   const pre = document.createElement('pre')
@@ -91,6 +118,12 @@ queryAll('script.json-example').forEach(element => {
 queryAll('script.js-example').forEach(element => {
   const pre = document.createElement('pre')
   pre.innerHTML = exampleCode`<code class="language-js ${exampleCodeClass(element)}">${dedent(element.innerHTML)}</code>`
+  element.replaceWith(pre)
+})
+
+queryAll('script.bash-example').forEach(element => {
+  const pre = document.createElement('pre')
+  pre.innerHTML = exampleCode`<code class="language-bash ${exampleCodeClass(element)}">${dedent(element.innerHTML)}</code>`
   element.replaceWith(pre)
 })
 
@@ -296,7 +329,7 @@ async function * getFiles (dir) {
 
 async function minifyCss (cssText) {
   const esbuild = await import('esbuild')
-  const result = await esbuild.transform(cssText, { loader: 'css', minify: true })
+  const result = await esbuild.transform(cssText, { loader: 'css', minify: true})
   return result.code
 }
 

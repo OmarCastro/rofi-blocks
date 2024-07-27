@@ -47,7 +47,7 @@ problem does not already exist.
   | json-glib    | 1.0     |
 
 - You are familiar with Git.
-- For testing, you have valgrind installed
+- For testing, you have valgrind, xvfb and imagemagick
 - For documentation: you have NodeJs installed (recommended to use the latest LTS version)
 
 ## Development Workflow

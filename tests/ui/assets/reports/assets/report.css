@@ -1,0 +1,157 @@
+
+body {
+	position: relative;
+	margin: 0;
+	padding: 0;
+	min-width: 320px;
+	display: block;
+}
+
+
+.split {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: strech;
+	p {
+		flex-basis: 100%;
+	}
+}
+
+
+.container {
+	position: relative;
+	width: 100%;
+	margin: 50px 0;
+
+}
+
+.inner {
+	position: relative;
+	width: 100%;
+	max-width: 960px;
+	margin: 0 auto;
+	overflow: hidden;
+	box-sizing: border-box;
+	padding: 20px 30px;
+}
+
+section {
+	position: relative;
+	width: 100%;
+	margin: 20px 0;
+	background-color: var(--bg-color-active);
+
+	.comparison-slider {
+		position: relative;
+		width: 100%;
+		margin: 0;
+		border: 5px white solid;
+		box-sizing: border-box;
+		> img {
+			width: 100%;
+			height: auto;
+			display: block;
+		}
+
+		&:hover .overlay{
+			display: block;
+		}
+
+		.overlay {
+			display: block;
+			position: absolute;
+			width: 250px;
+			bottom: 20px;
+			right: 20px;
+			background-color: rgba(0, 0, 0, 0.4);
+			padding: 10px;
+			box-sizing: border-box;
+			color: #DDD;
+			text-align: right;
+		}
+
+		.resize {
+			position: absolute;
+			top: 0;
+			left: 0;
+			height: 100%;
+			width: 50%;
+			overflow: hidden;
+			> img {
+				display: block;
+
+			}
+			.overlay {
+				right: auto;
+				left: 20px;
+				text-align: left;
+			}
+		}
+
+		.divider {
+			position: absolute;
+			width: 2px;
+			height: 100%;
+			background-color: rgba(256, 256, 256, 0.2);
+			left: 50%;
+			top: 0;
+			bottom: 0;
+			margin-left: -1px;
+			cursor: ew-resize;
+			&:before {
+				content: "";
+				position: absolute;
+				width: 20px;
+				height: 20px;
+				left: -9px;
+				top: 50%;
+				margin-top: -10px;
+				background-color: white;
+				transform: rotate(45deg);
+				transition: all 0.1s ease-in-out;
+			}
+			&:after {
+				content: "";
+				position: absolute;
+				width: 12px;
+				height: 12px;
+				left: -5px;
+				top: 50%;
+				margin-top: -6px;
+				background-color: white;
+				transform: rotate(45deg);
+				transition: all 0.1s ease-in-out;
+			}
+			&.dragging{
+				&:before {
+					width: 30px;
+					height: 30px;
+					left: -14px;
+					margin-top: -15px;
+				}
+				&:after {
+					width: 20px;
+					height: 20px;
+					left: -9px;
+					margin-top: -10px;
+					background-color: #555;
+				}
+			}
+		}
+	}
+}
+
+.caption {
+	position: relative;
+	width: 100%;
+	padding: 10px;
+	box-sizing: border-box;
+	font-size: 12px;
+	font-style: italic;
+}
+
+.diff-image {
+	width: 100%;
+}
