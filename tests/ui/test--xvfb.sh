@@ -3,7 +3,7 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 function test-rofi(){
-    rofi -theme /usr/share/rofi/themes/gruvbox-light.rasi -font "Arial 8" -modi blocks -show blocks -blocks-wrap "$1" > /dev/null
+    rofi -theme assets/rofi-theme.rasi -font "Arial 8" -modi blocks -show blocks -blocks-wrap "$1" > /dev/null
 }
 
 function compare-result(){
