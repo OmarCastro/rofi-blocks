@@ -3,11 +3,14 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 function test-rofi(){
-    rofi -theme assets/rofi-theme.rasi -font "Arial 8" -modi blocks -show blocks -blocks-wrap "$1" > /dev/null
+    rofi -theme assets/rofi-theme.rasi -font "Arial 10" -modi blocks -show blocks -blocks-wrap "$1" > /dev/null
 }
 
+
 function compare-result(){
-    compare -fuzz 5% -metric AE ./assets/tests/"$1"/expected.png ./assets/tests/"$1"/result.png assets/tests/"$1"/diff.png 2>&1
+    DIFF_PIXEL_AMOUNT="$(compare -fuzz 5% -metric AE ./assets/tests/"$1"/expected.png ./assets/tests/"$1"/result.png assets/tests/"$1"/diff.png 2>&1)"
+    DIFF_PIXEL_PERC=$(( $DIFF_PIXEL_AMOUNT * 100 / (1280*720) ))
+    echo "$DIFF_PIXEL_PERC"
 }
 
 
@@ -23,5 +26,5 @@ TEST_2_RESULT="$(compare-result test-2)"
 
 # report
 echo "1..2"
-if [ "$TEST_1_RESULT" -lt "2" ]; then echo "ok 1 - $TEST_1_NAME"; else echo "not ok 1 - $TEST_1_NAME - $TEST_1_RESULT"; fi
-if [ "$TEST_2_RESULT" -lt "2" ]; then echo "ok 2 - $TEST_2_NAME"; else echo "not ok 2 - $TEST_2_NAME - $TEST_2_RESULT"; fi
+if [ "$TEST_1_RESULT" -lt "1" ]; then echo "ok 1 - $TEST_1_NAME"; else echo "not ok 1 - $TEST_1_NAME - $TEST_1_RESULT% pixel difference"; fi
+if [ "$TEST_2_RESULT" -lt "1" ]; then echo "ok 2 - $TEST_2_NAME"; else echo "not ok 2 - $TEST_2_NAME - $TEST_2_RESULT% pixel difference"; fi
