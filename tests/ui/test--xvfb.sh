@@ -3,11 +3,11 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 function test-rofi(){
-    rofi -theme /usr/share/rofi/themes/gruvbox-light.rasi -font "Arial 13" -modi blocks -show blocks -blocks-wrap "$1" > /dev/null
+    rofi -theme /usr/share/rofi/themes/gruvbox-light.rasi -font "Arial 8" -modi blocks -show blocks -blocks-wrap "$1" > /dev/null
 }
 
 function compare-result(){
-    magick compare -fuzz 5% -metric MSE \
+    magick compare -fuzz 5% -metric AE \
       ./assets/tests/"$1"/expected.png \
       ./assets/tests/"$1"/result.png \
       ./assets/tests/"$1"/diff.png 2>&1 | sed -E 's,^[^0-9]*([0-9]+).*$,\1,'
