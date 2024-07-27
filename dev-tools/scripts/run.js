@@ -85,6 +85,7 @@ async function buildDocs () {
   await Promise.all([
     exec(`${process.argv[0]} dev-tools/scripts/build-html.js index.html`),
     exec(`${process.argv[0]} dev-tools/scripts/build-html.js contributing.html`),
+    exec(`${process.argv[0]} dev-tools/scripts/build-html.js test-report.html`),
   ])
 
   logEndStage()

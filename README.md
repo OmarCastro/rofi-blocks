@@ -3,7 +3,7 @@
 <picture>
     <img src="https://omarcastro.github.io/rofi-blocks/reports/license-badge-a11y.svg">
 </picture>
-</a><a href="https://omarcastro.github.io/rofi-blocks/reports/testlog.txt" aria-label="Show test results">
+</a><a href="https://omarcastro.github.io/rofi-blocks/test-report" aria-label="Show test results">
 <picture>
     <img src="https://omarcastro.github.io/rofi-blocks/reports/test-results-badge-a11y.svg">
 </picture>

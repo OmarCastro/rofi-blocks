@@ -8,22 +8,28 @@
         <meta name="viewport" content="width=device-width">
         <link rel="stylesheet" href="code-example.css" ss:inline>
         <link rel="stylesheet" href="doc.css" ss:inline>
+        <script type="text/javascript">
+            function resizeIframe(obj){
+               obj.style.width = "100%";
+               obj.style.height = 0;
+               obj.style.height = obj.contentWindow.document.body.scrollHeight + 'px';
+            }
+          </script>
+          
     </head>
     <body>
         <div class="sidebar">
 
         <div class="toc">
             <div class="toc">
-                <p><strong>Documentation</strong></p>
                 <template ss:toc></template>
-                <p><strong><a href="contributing">How to contribute</a></strong></p>
             </div>
         </div>
     </div>
     <div class="content">
 
         <h1 class="no-toc">
-            rofi-blocks
+            Test report
         </h1>
 
 
@@ -31,7 +37,7 @@
             <a href="https://github.com/OmarCastro/rofi-blocks/blob/master/LICENSE" title="View license on repository" ss:aria-label>
                 <img src="reports/license-badge-a11y.svg" ss:size ss:badge-attrs="-title"></img>
             </a>
-            <a href="test-report" title="Show test results" ss:aria-label>
+            <a href="reports/testlog.txt" title="Show test results" ss:aria-label>
                 <img src="reports/test-results-badge-a11y.svg" ss:size ss:badge-attrs="-title"></img>
             </a>
             <a href="reports/coveragereport" title="Show test code coverage information" ss:aria-label>
@@ -46,5 +52,19 @@
 
         </section>
 
+        <h2> Summary </h1>
+
+        <details open>
+            <summary>text report</summary>
+            <script type="text/plain" class="text-example" ss:include="reports/testlog.txt"></script>
+        </details>
+
+        <h2> UI tests </h2>
+
+        <h3>Rofi should open blocks modi correctly</h3>
+        <iframe src="reports/ui/test-1/report.html" frameborder="0" scrolling="no" onload="resizeIframe(this)"></iframe>
+
+        <h3>Active entry should work on first paint </h3>
+        <iframe src="reports/ui/test-2/report.html" frameborder="0" scrolling="no" onload="resizeIframe(this)"></iframe>
     </body>
 </html>

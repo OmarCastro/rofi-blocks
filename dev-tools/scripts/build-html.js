@@ -127,6 +127,12 @@ queryAll('script.bash-example').forEach(element => {
   element.replaceWith(pre)
 })
 
+queryAll('script.text-example').forEach(element => {
+  const pre = document.createElement('pre')
+  pre.innerHTML = exampleCode`<code class="${exampleCodeClass(element)}">${dedent(element.innerHTML)}</code>`
+  element.replaceWith(pre)
+})
+
 queryAll('svg[ss:include]').forEach(element => {
   const ssInclude = element.getAttribute('ss:include')
   const svgText = readFileImport(ssInclude)
