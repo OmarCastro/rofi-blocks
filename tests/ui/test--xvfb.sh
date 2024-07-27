@@ -10,7 +10,7 @@ function compare-result(){
     magick compare -fuzz 5% -metric AE \
       ./assets/tests/"$1"/expected.png \
       ./assets/tests/"$1"/result.png \
-      ./assets/tests/"$1"/diff.png 2>&1 | sed -E 's,^[^0-9]*([0-9]+).*$,\1,'
+      assets/tests/"$1"/diff.png 2>&1 | sed -E 's,^[^0-9]*([0-9]+).*$,\1,'
 }
 
 
