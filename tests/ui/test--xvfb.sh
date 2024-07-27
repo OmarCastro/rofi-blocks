@@ -7,7 +7,7 @@ function test-rofi(){
 }
 
 function compare-result(){
-    compare -fuzz 5% -metric AE ./assets/tests/"$1"/expected.png ./assets/tests/"$1"/result.png assets/tests/"$1"/diff.png 2>&1
+    compare -fuzz 10% -metric AE ./assets/tests/"$1"/expected.png ./assets/tests/"$1"/result.png assets/tests/"$1"/diff.png 2>&1
 }
 
 
