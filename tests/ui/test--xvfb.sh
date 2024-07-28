@@ -26,5 +26,5 @@ TEST_2_RESULT="$(compare-result test-2)"
 
 # report
 echo "1..2"
-if [ "$TEST_1_RESULT" -lt "1" ]; then echo "ok 1 - $TEST_1_NAME"; else echo "not ok 1 - $TEST_1_NAME - $TEST_1_RESULT% pixel difference"; fi
-if [ "$TEST_2_RESULT" -lt "1" ]; then echo "ok 2 - $TEST_2_NAME"; else echo "not ok 2 - $TEST_2_NAME - $TEST_2_RESULT% pixel difference"; fi
+if [ "$TEST_1_RESULT" -lt "1" ]; then echo "ok 1 - $TEST_1_NAME - below 1% pixel difference"; else echo "not ok 1 - $TEST_1_NAME - $TEST_1_RESULT% pixel difference"; fi
+if [ "$TEST_2_RESULT" -lt "1" ]; then echo "ok 2 - $TEST_2_NAME - below 1% pixel difference"; else echo "not ok 2 - $TEST_2_NAME - $TEST_2_RESULT% pixel difference"; fi
