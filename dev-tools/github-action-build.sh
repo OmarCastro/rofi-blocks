@@ -6,7 +6,7 @@ echo "==============="
 echo "=== COMPILE ==="
 echo "==============="
 
-meson setup build-test -Db_coverage=true --warnlevel 2 || exit 1
+meson setup build-test -Db_coverage=true --warnlevel 2 -Dui_test=true || exit 1
 meson compile -C build-test || exit 1
 
 echo "==============="

@@ -2,6 +2,7 @@ project('rofi-blocks', 'c', version : '0.1.0')
 
 prefix = get_option('prefix')
 libdir = get_option('libdir')
+ui_test_enabled = get_option('ui_test')
 
 libexecdir = join_paths(prefix, get_option('libexecdir'))
 sysconfdir = join_paths(prefix, get_option('sysconfdir'))
@@ -60,11 +61,13 @@ test(
   workdir: join_paths(meson.current_source_dir(), 'tests')
 )
 
-ui_test = join_paths(meson.source_root(), 'tests/ui/test.sh')
-test(
-  'test-suite-ui',
-  find_program(ui_test),
-  env: test_env,
-  protocol: 'tap',
-  workdir: join_paths(meson.current_source_dir(), 'tests')
-)
+if ui_test_enabled 
+  ui_test = join_paths(meson.source_root(), 'tests/ui/test.sh')
+  test(
+    'test-suite-ui',
+    find_program(ui_test),
+    env: test_env,
+    protocol: 'tap',
+    workdir: join_paths(meson.current_source_dir(), 'tests')
+  )
+endif
