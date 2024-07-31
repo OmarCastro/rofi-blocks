@@ -81,6 +81,9 @@ async function buildDocs () {
   await cp_R('docs', 'build-docs')
   await cp_R('build-test/meson-logs', 'build-docs/reports')
   await cp_R('build-test/meson-logs', 'build-docs/reports')
+  await cp_R('tests/ui', 'build-docs/reports/ui')
+  await cp_R('test-utils/ui/reports/assets/report.css', 'build-docs/reports/ui')
+  await cp_R('test-utils/ui/reports/assets/report.js', 'build-docs/reports/ui')
   await createBadges()
   await Promise.all([
     exec(`${process.argv[0]} dev-tools/scripts/build-html.js index.html`),
@@ -88,6 +91,13 @@ async function buildDocs () {
     exec(`${process.argv[0]} dev-tools/scripts/build-html.js test-report.html`),
   ])
 
+  for (const dirPath of await listFolders('build-docs/reports/ui', {filterPatterns: ["UIT*"]})) {
+    const folderName = dirPath.split("/").at(-1)
+    console.log(folderName)
+    await cp_R('test-utils/ui/reports/assets/report.html', dirPath)
+    await mv(`${dirPath}/script`, `${dirPath}/script.txt`)
+    await exec(`${process.argv[0]} dev-tools/scripts/build-html.js reports/ui/${folderName}/report.html`)
+  }
   logEndStage()
 }
 
@@ -229,6 +239,23 @@ async function listChangedFiles () {
   const diffExec = execGitCmd(['diff', '--name-only', '--diff-filter=ACMRTUB', mergeBase])
   const lsFilesExec = execGitCmd(['ls-files', '--others', '--exclude-standard'])
   return new Set([...(await diffExec), ...(await lsFilesExec)].filter(filename => filename.trim().length > 0))
+}
+
+async function listFolders(dir, {filterPatterns = []} = {}){
+  const { minimatch } = await import('minimatch')
+  const { join } = await import('node:path')
+  const { statSync, readdirSync } = await import('node:fs')
+  const dirList = readdirSync(dir).reduce(function (list, file) {
+    const name = join(dir, file)
+    const isDir = statSync(name).isDirectory()
+    if(!isDir) { return list }
+    return list.concat(name)
+  }, [])
+
+  if (!filterPatterns) { return fileList }
+  const intersection = filterPatterns.flatMap(pattern => minimatch.match(dirList, pattern, { matchBase: true, dot: true }))
+  return [...new Set(intersection)]
+
 }
 
 function isRunningFromNPMScript () {
