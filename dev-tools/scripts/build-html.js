@@ -90,6 +90,13 @@ const exampleCodeClass = (element) => {
   return "keep-markup" + lineNoClass + wrapClass
 }
 
+queryAll('[ss:include-html]').forEach(element => {
+  const ssInclude = element.getAttribute('ss:include-html')
+  const text = readFileImport(ssInclude)
+  element.innerHTML = text
+  element.removeAttribute('ss:include-html')
+})
+
 queryAll('script[ss:include]').forEach(element => {
   const ssInclude = element.getAttribute('ss:include')
   const text = readFileImport(ssInclude)

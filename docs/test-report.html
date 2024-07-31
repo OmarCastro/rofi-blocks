@@ -8,13 +8,8 @@
         <meta name="viewport" content="width=device-width">
         <link rel="stylesheet" href="code-example.css" ss:inline>
         <link rel="stylesheet" href="doc.css" ss:inline>
-        <script type="text/javascript">
-            function resizeIframe(obj){
-               obj.style.width = "100%";
-               obj.style.height = 0;
-               obj.style.height = obj.contentWindow.document.body.scrollHeight + 'px';
-            }
-          </script>
+        <link rel="stylesheet" href="test-report.css" ss:inline>
+        <script type="text/javascript" src="test-report.js" defer></script>
           
     </head>
     <body>
@@ -61,10 +56,7 @@
 
         <h2> UI tests </h2>
 
-        <h3>Rofi should open blocks modi correctly</h3>
-        <iframe src="reports/ui/UIT001/report.html" frameborder="0" scrolling="no" onload="resizeIframe(this)"></iframe>
+        <section class="section section--ui-tests" ss:include-html="reports/ui/reports.html"></section>
 
-        <h3>Active entry should work on first paint </h3>
-        <iframe src="reports/ui/UIT002/report.html" frameborder="0" scrolling="no" onload="resizeIframe(this)"></iframe>
     </body>
 </html>

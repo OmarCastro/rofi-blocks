@@ -82,22 +82,22 @@ async function buildDocs () {
   await cp_R('build-test/meson-logs', 'build-docs/reports')
   await cp_R('build-test/meson-logs', 'build-docs/reports')
   await cp_R('tests/ui', 'build-docs/reports/ui')
-  await cp_R('test-utils/ui/reports/assets/report.css', 'build-docs/reports/ui')
-  await cp_R('test-utils/ui/reports/assets/report.js', 'build-docs/reports/ui')
-  await createBadges()
+   await createBadges()
   await Promise.all([
     exec(`${process.argv[0]} dev-tools/scripts/build-html.js index.html`),
     exec(`${process.argv[0]} dev-tools/scripts/build-html.js contributing.html`),
-    exec(`${process.argv[0]} dev-tools/scripts/build-html.js test-report.html`),
   ])
 
+  let uiTestContent = ""
   for (const dirPath of await listFolders('build-docs/reports/ui', {filterPatterns: ["UIT*"]})) {
     const folderName = dirPath.split("/").at(-1)
     console.log(folderName)
-    await cp_R('test-utils/ui/reports/assets/report.html', dirPath)
     await mv(`${dirPath}/script`, `${dirPath}/script.txt`)
-    await exec(`${process.argv[0]} dev-tools/scripts/build-html.js reports/ui/${folderName}/report.html`)
+    uiTestContent += await generateUITestBlock(`reports/ui/${folderName}`)
   }
+  await writeFile(`build-docs/reports/ui/reports.html`, uiTestContent)
+  await exec(`${process.argv[0]} dev-tools/scripts/build-html.js test-report.html`),
+
   logEndStage()
 }
 
@@ -490,3 +490,44 @@ async function loadDom () {
 // @section 13 module graph utilities
 
 // @section 14 build tools plugins
+
+async function generateUITestBlock(foldername){
+  const escapeHtml = (s) => s.replace(/[^0-9A-Za-z ]/g,c => "&#" + c.charCodeAt(0) + ";");
+  const testDescription = await readFile(`build-docs/${foldername}/DESCRIPTION`)
+  const [testName, ...description] = testDescription.split('\n').map(escapeHtml)
+
+
+  return `
+  <h3>${testName}</h3>
+  <div>${description.join('\n')}</div>
+<section>
+    <div>
+        <script type="text/plain" class="bash-example" ss:include="${foldername}/script.txt"></script>
+    </div>
+    <div class="caption">Rofi block script</div>
+</section>
+
+<section>
+    <!-- Comparison Slider - this div contain the slider with the individual images captions -->
+    <div class="comparison-slider">
+        <div class="overlay"><strong>Expected</strong> image.</div>
+    <img src="${foldername}/expected-screenshot-1.png" alt="expected screenshot">
+    <!-- Div containing the image layed out on top from the left -->
+    <div class="resize">
+        <div class="overlay"> <strong>Result</strong> image.</div>
+        <img src="${foldername}/result-screenshot-1.png" alt="result screenshot">
+    </div>
+    <!-- Divider where user will interact with the slider -->
+    <div class="divider"></div>
+    </div>
+    <!-- All global captions if exist can go on the div bellow -->
+    <div class="caption">image slider</div>
+</section>
+
+<section>
+    <img class="diff-image" src="${foldername}/diff-screenshot-1.png" alt="diffence image">
+    <div class="caption">Difference image</div>
+</section>
+`
+
+} 

@@ -1,11 +1,4 @@
 
-body {
-	position: relative;
-	margin: 0;
-	padding: 0;
-	min-width: 320px;
-	display: block;
-}
 
 
 .split {
@@ -19,27 +12,10 @@ body {
 	}
 }
 
-
-.container {
-	position: relative;
-	width: 100%;
-}
-
-.inner {
-	position: relative;
-	width: 100%;
-	max-width: 960px;
-	margin: 0 auto;
-	overflow: hidden;
-	box-sizing: border-box;
-	padding: 20px 30px;
-}
-
 section {
 	position: relative;
 	width: 100%;
 	margin: 20px 0;
-	background-color: var(--bg-color-active);
 
 	.comparison-slider {
 		position: relative;
