@@ -1,0 +1,4 @@
+Active entry should work on first paint
+
+  This test validates a bug fix related to Rofi custom script that on first paint, the "active entry"
+property is ignored, so the first entry is selected regardless of the "active entry" value
