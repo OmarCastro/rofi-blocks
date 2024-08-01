@@ -533,15 +533,14 @@ async function generateUITestBlock(foldername){
 
   <section class="images--2up">
       <div class="image-figure">
-        <img src="${foldername}/expected-screenshot-1.png" alt="expected screenshot">
-        <div class="caption">expected screenshot </div>
+        <img src="${foldername}/result-screenshot-1.png" alt="result screenshot">
+        <div class="caption"> <strong>Result</strong> image. </div>
       </div>
+
       <div class="image-figure">
-              <img src="${foldername}/result-screenshot-1.png" alt="result screenshot">
-        <div class="caption">result screenshot </div>
+        <img src="${foldername}/expected-screenshot-1.png" alt="expected screenshot">
+        <div class="caption"> <strong>Expected</strong> image. </div>
       </div>
-
-
   </section>
 
   <section class="images--diff">
