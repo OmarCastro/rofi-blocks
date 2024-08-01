@@ -8,7 +8,7 @@ function test-rofi(){
 
 
 function compare-result(){
-    DIFF_PIXEL_AMOUNT="$(compare -fuzz 5% -metric AE ./"$1"/expected-screenshot-"$2".png ./"$1"/result-screenshot-"$2".png "$1"/diff-screenshot-"$2".png 2>&1)"
+    DIFF_PIXEL_AMOUNT="$(magick compare -fuzz 5% -metric AE ./"$1"/expected-screenshot-"$2".png ./"$1"/result-screenshot-"$2".png "$1"/diff-screenshot-"$2".png 2>&1)"
     DIFF_PIXEL_PERC=$(( $DIFF_PIXEL_AMOUNT * 100 / (1280*720) ))
     echo "$DIFF_PIXEL_PERC"
 }
