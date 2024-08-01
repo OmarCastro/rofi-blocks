@@ -6,6 +6,6 @@ echo '{ "lines": [ "one","two","three" ], "active entry": 1}'
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 sleep 0.1
-magick import -window root "./result-screenshot-1.png" >&2
+import -window root "./result-screenshot-1.png" >&2
 sleep 0.1
 
