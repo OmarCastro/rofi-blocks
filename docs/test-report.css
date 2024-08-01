@@ -12,7 +12,7 @@
 	}
 }
 
-section {
+.test-case-report {
 	position: relative;
 	width: 100%;
 	margin: 20px 0;
@@ -115,6 +115,40 @@ section {
 			}
 		}
 	}
+
+	.images--2up {
+		display: flex;
+		justify-content: space-evenly;
+		img {
+			width: 95%;
+		}
+	}
+
+	&:has(input[name="tab"][value="slider"]:not(:checked)) .images--slider,
+	&:has(input[name="tab"][value="diff"]:not(:checked)) .images--diff,
+	&:has(input[name="tab"][value="2up"]:not(:checked)) .images--2up {
+		display: none;
+	}
+
+	.tabs form {
+		padding: 1em;
+
+		display: flex;
+		justify-content: space-around;
+		label {
+			padding: 1em;
+			width: 30%;
+			text-align: center;
+			&:has(input:checked), &:hover {
+				background: var(--bg-color-active);
+				cursor: pointer;
+			}
+			input {
+				appearance: none;
+			}
+			
+		}
+	}
 }
 
 .caption {
@@ -122,8 +156,8 @@ section {
 	width: 100%;
 	padding: 10px;
 	box-sizing: border-box;
-	font-size: 12px;
 	font-style: italic;
+	text-align: center;
 }
 
 .diff-image {

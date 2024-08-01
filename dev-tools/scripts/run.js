@@ -494,39 +494,61 @@ async function loadDom () {
 async function generateUITestBlock(foldername){
   const escapeHtml = (s) => s.replace(/[^0-9A-Za-z ]/g,c => "&#" + c.charCodeAt(0) + ";");
   const testDescription = await readFile(`build-docs/${foldername}/DESCRIPTION`)
+  const testResult = await readFile(`build-docs/${foldername}/RESULT`)
   const [testName, ...description] = testDescription.split('\n').map(escapeHtml)
+  const passed = testResult.trim() === "pass"
 
 
   return `
-  <h3>${testName}</h3>
+  <section class="test-case-report">
+  <h3>${passed ? "️✅" : "❌" } ${testName}</h3>
   <div>${description.join('\n')}</div>
-<section>
-    <div>
-        <script type="text/plain" class="bash-example" ss:include="${foldername}/script.txt"></script>
-    </div>
-    <div class="caption">Rofi block script</div>
-</section>
+  <section>
+      <div>
+          <script type="text/plain" class="bash-example" ss:include="${foldername}/script.txt"></script>
+      </div>
+      <div class="caption">Rofi block script</div>
+  </section>
 
-<section>
-    <!-- Comparison Slider - this div contain the slider with the individual images captions -->
-    <div class="comparison-slider">
+  <section class="tabs">
+    <form>
+    <label> <input type="radio" name="tab" value="2up" checked> 2-up </label>
+    <label> <input type="radio" name="tab" value="slider"> slider </label>
+    <label> <input type="radio" name="tab" value="diff"> pixel diff </label>
+   </form>
+  </section>
+
+  <section class="images--slider">
+      <div class="comparison-slider">
         <div class="overlay"><strong>Expected</strong> image.</div>
-    <img src="${foldername}/expected-screenshot-1.png" alt="expected screenshot">
-    <!-- Div containing the image layed out on top from the left -->
-    <div class="resize">
-        <div class="overlay"> <strong>Result</strong> image.</div>
-        <img src="${foldername}/result-screenshot-1.png" alt="result screenshot">
-    </div>
-    <!-- Divider where user will interact with the slider -->
-    <div class="divider"></div>
-    </div>
-    <!-- All global captions if exist can go on the div bellow -->
-    <div class="caption">image slider</div>
-</section>
+        <img src="${foldername}/expected-screenshot-1.png" alt="expected screenshot">
+        <div class="resize">
+            <div class="overlay"> <strong>Result</strong> image.</div>
+            <img src="${foldername}/result-screenshot-1.png" alt="result screenshot">
+        </div>
+        <div class="divider"></div>
+      </div>
+      <div class="caption">visual image comaparator slider</div>
+  </section>
 
-<section>
-    <img class="diff-image" src="${foldername}/diff-screenshot-1.png" alt="diffence image">
-    <div class="caption">Difference image</div>
+  <section class="images--2up">
+      <div class="image-figure">
+        <img src="${foldername}/expected-screenshot-1.png" alt="expected screenshot">
+        <div class="caption">expected screenshot </div>
+      </div>
+      <div class="image-figure">
+              <img src="${foldername}/result-screenshot-1.png" alt="result screenshot">
+        <div class="caption">result screenshot </div>
+      </div>
+
+
+  </section>
+
+  <section class="images--diff">
+      <img class="diff-image" src="${foldername}/diff-screenshot-1.png" alt="diffence image">
+      <div class="caption">Pixel difference map image</div>
+  </section>
+
 </section>
 `
 

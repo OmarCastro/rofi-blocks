@@ -13,6 +13,7 @@ build-docs/
 # UI test results
 tests/ui/*/result-screenshot-*.png
 tests/ui/*/diff-screenshot-*.png
+tests/ui/*/RESULT
 
 # http://www.gnu.org/software/automake
 

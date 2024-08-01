@@ -21,7 +21,9 @@ do
     RESULT="$(compare-result "$file" "1")"
     if [ "$RESULT" -lt "1" ]; then
         echo "ok 1 - $TEST_NAME - below 1% pixel difference"; 
+        echo "pass" > "$file/RESULT"
     else 
         echo "not ok 1 - $TEST_NAME - $RESULT% pixel difference"; 
+        echo "fail" > "$file/RESULT"
     fi
 done
