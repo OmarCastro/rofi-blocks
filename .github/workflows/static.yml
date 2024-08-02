@@ -33,11 +33,15 @@ jobs:
         uses: actions/checkout@v4
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: meson gcovr libjson-glib-1.0-0 libjson-glib-dev rofi rofi-dev valgrind xvfb libpng-dev libjpeg-dev libtiff-dev imagemagick
+          packages: meson gcovr libjson-glib-1.0-0 libjson-glib-dev rofi rofi-dev valgrind xvfb libpng-dev libjpeg-dev libtiff-dev
           version: 1.0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: ⚙️ Install imagemagick
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install imagemagick
       - name: Setup build-test
         run: ${{ github.workspace }}/dev-tools/github-action-build.sh
       - name: Setup Pages
