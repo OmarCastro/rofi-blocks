@@ -13,17 +13,24 @@ function compare-result(){
     echo "$DIFF_PIXEL_PERC"
 }
 
-echo "1..$(find . -mindepth 1 -maxdepth 1 -name "UI*" -type d -printf '.' | wc -c)"
-find . -mindepth 1 -maxdepth 1 -name "UI*" -type d -print0 | while read -d $'\0' file
+export TEST_NUMBER=1
+
+
+echo "1..$(find . -mindepth 2 -maxdepth 2 -name "expected-screenshot-*.png" -type f -printf '.' | wc -c)"
+while read -d $'\0' file
 do
     TEST_NAME="$(head -1 "$file/DESCRIPTION")"
     test-rofi "$file/script"
-    RESULT="$(compare-result "$file" "1")"
-    if [ "$RESULT" -lt "1" ]; then
-        echo "ok 1 - $TEST_NAME - below 1% pixel difference"; 
-        echo "pass" > "$file/RESULT"
-    else 
-        echo "not ok 1 - $TEST_NAME - $RESULT% pixel difference"; 
-        echo "fail" > "$file/RESULT"
-    fi
-done
+    while read -d $'\0' scrshtnum
+    do
+        RESULT="$(compare-result "$file" "$scrshtnum")"
+        if [ "$RESULT" -lt "1" ]; then
+            echo "ok $TEST_NUMBER - $TEST_NAME - screenshot $scrshtnum below 1% pixel difference"; 
+            echo "pass" > "$file/RESULT"
+        else 
+            echo "not ok $TEST_NUMBER - $TEST_NAME - screenshot $scrshtnum, $RESULT% pixel difference"; 
+            echo "fail" > "$file/RESULT"
+        fi
+        TEST_NUMBER=$((TEST_NUMBER+1))
+    done < <( find "$file" -mindepth 1 -maxdepth 1 -name "expected-screenshot-*.png" -type f -print0 | sed -znE 's|.*/expected-screenshot-([0-9]+).*|\1|p' )
+done < <(find . -mindepth 1 -maxdepth 1 -name "UI*" -type d -print0 | sort -z)
