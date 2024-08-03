@@ -66,6 +66,7 @@
 
 		.divider {
 			position: absolute;
+			touch-action: none;
 			width: 2px;
 			height: 100%;
 			background-color: rgba(256, 256, 256, 0.2);
