@@ -1,0 +1,3 @@
+Writing on prompt should trigger input event
+
+  This test checks if input event is triggered

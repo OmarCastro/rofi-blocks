@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+echo '{ "lines": [ "hello","world", "lorem", "ipsum", "lor" ], "message": "lorem ipsum dolor sit amet", "prompt": "test prompt"}'
+
+
+(cd "$(dirname "${BASH_SOURCE[0]}")"; sleep 0.1; import -window root "./result-screenshot-1.png" >&2)
+
+
+xdotool type lor
+
+
+# END TEST SCRIPT
+cd "$(dirname "${BASH_SOURCE[0]}")"
+sleep 0.1
+import -window root "./result-screenshot-2.png" >&2
+sleep 0.1
+
