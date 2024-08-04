@@ -527,7 +527,7 @@ async function generateUITestBlock(foldername){
 
 function generateUITestScreenshotBlock(foldername, screenshotNumber, status){
   const passed = status === "pass"
-  return `<details ${passed ? '': 'open'}>
+  return `<details ${passed ? '': 'open'} class="test-screenshot">
     <summary><h4 class="no-toc" style="display: inline">${passed ? "️✅" : "❌" } screenshot ${screenshotNumber}</h4></summary>
     <section class="tabs">
     <form>

@@ -125,9 +125,9 @@
 		}
 	}
 
-	&:has(input[name="tab"][value="slider"]:not(:checked)) .images--slider,
-	&:has(input[name="tab"][value="diff"]:not(:checked)) .images--diff,
-	&:has(input[name="tab"][value="2up"]:not(:checked)) .images--2up {
+	.test-screenshot:has(input[name="tab"][value="slider"]:not(:checked)) .images--slider,
+	.test-screenshot:has(input[name="tab"][value="diff"]:not(:checked)) .images--diff,
+	.test-screenshot:has(input[name="tab"][value="2up"]:not(:checked)) .images--2up {
 		display: none;
 	}
 
@@ -150,6 +150,28 @@
 			
 		}
 	}
+
+	details {
+		border: 1px solid var(--fg-color);
+		border-radius: 4px;
+		padding: 0.5em 0.5em 0;
+		margin: 0.5em 0;
+	  }
+	  
+	  summary {
+		font-weight: bold;
+		margin: -0.5em -0.5em 0;
+		padding: 0.5em;
+	  }
+	  
+	  details[open] {
+		padding: 0.5em;
+	  }
+	  
+	  details[open] summary {
+		border-bottom: 1px solid var(--fg-color);
+		margin-bottom: 0.5em;
+	  }
 }
 
 .caption {
