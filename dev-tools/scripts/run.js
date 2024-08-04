@@ -508,15 +508,21 @@ async function generateUITestBlock(foldername){
   <h3>${allPassed ? "️✅" : "❌" } ${testName}</h3>
   <div>${description.join('\n')}</div>
 
-  <section>
+  <details>
+      <summary><h4 class="no-toc" style="display: inline">Rofi script</h4></summary>
       <div>
           <script type="text/plain" class="bash-example" ss:include="${foldername}/script.txt"></script>
       </div>
       <div class="caption">Rofi block script</div>
-  </section>
+  </details>
   ${testResults
     .filter(({type}) => type === "screenshot")
     .map(({number, status})=>generateUITestScreenshotBlock(foldername, number, status))
+    .join("")
+  }
+   ${testResults
+    .filter(({type}) => type === "text")
+    .map(({number, status})=>generateUITestTextBlock(foldername, number, status))
     .join("")
   }
 
@@ -566,6 +572,27 @@ function generateUITestScreenshotBlock(foldername, screenshotNumber, status){
       <img class="diff-image" src="${foldername}/diff-screenshot-${screenshotNumber}.png" alt="diffence image">
       <div class="caption">Pixel difference map image</div>
   </section>
+  
+</details>`
+}
+
+function generateUITestTextBlock(foldername, textNumber, status){
+  const passed = status === "pass"
+  return `<details ${passed ? '': 'open'} class="test-text">
+    <summary><h4 class="no-toc" style="display: inline">${passed ? "️✅" : "❌" } text ${textNumber}</h4></summary>
+    <div>
+          <script type="text/plain" class="line-numbers text-example" ss:include="${foldername}/result-text-${textNumber}.txt"></script>
+          <div class="caption">Result text</div>
+    </div>
+    <div>
+        <script type="text/plain" class="line-numbers text-example" ss:include="${foldername}/expected-text-${textNumber}.txt"></script>
+        <div class="caption">Expected text</div>
+    </div>
+
+    <div>
+        <script type="text/plain" class="text-example" ss:include="${foldername}/diff-text-${textNumber}.txt"></script>
+        <div class="caption">Unified Diff</div>
+    </div>
   
 </details>`
 }
