@@ -11,8 +11,9 @@ build-test/
 build-docs/
 
 # UI test results
-tests/ui/*/result-screenshot-*.png
-tests/ui/*/diff-screenshot-*.png
+tests/ui/*/result-*
+tests/ui/*/diff-*
+
 tests/ui/*/RESULT
 
 # http://www.gnu.org/software/automake
