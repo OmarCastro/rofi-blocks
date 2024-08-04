@@ -1,3 +1,0 @@
-{"name":"input change", "value":"l", "data":""}
-{"name":"input change", "value":"lo", "data":""}
-{"name":"input change", "value":"lor", "data":""}
