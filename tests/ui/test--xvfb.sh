@@ -17,24 +17,47 @@ function compare-result(){
     fi
 }
 
+function validate-screenshots(){
+    while read -d $'\0' scrshtnum
+    do
+        RESULT="$(compare-result "$1" "$scrshtnum")"
+        if [ "$RESULT" = "0" ]; then
+            echo "ok $TEST_NUMBER - $TEST_NAME - screenshot $scrshtnum equal"; 
+            echo "screenshot,$scrshtnum,pass" >> "$1/RESULT"
+        else 
+            echo "not ok $TEST_NUMBER - $TEST_NAME - screenshot $scrshtnum diffferent, $RESULT"; 
+            echo "screenshot,$scrshtnum,fail" >> "$1/RESULT"
+        fi
+        TEST_NUMBER=$((TEST_NUMBER+1))
+    done < <( find "$1" -mindepth 1 -maxdepth 1 -name "expected-screenshot-*.png" -type f -print0 | sed -znE 's|.*/expected-screenshot-([0-9]+).*|\1|p' )
+}
+
+function validate-texts(){
+    while read -d $'\0' textnum
+    do
+        RESULT="$(diff -u "$1/expected-text-$textnum.txt" "$1/result-text-$textnum.txt")"
+        IS_DIFF=$?
+        echo "$RESULT" >  "$1/diff-text-$textnum.txt" 
+        if [ "$IS_DIFF" = "0" ]; then
+            echo "ok $TEST_NUMBER - $TEST_NAME - text $textnum equal"; 
+            echo "text,$textnum,pass" >> "$1/RESULT"
+        else 
+            echo "not ok $TEST_NUMBER - $TEST_NAME - text $textnum different"; 
+            echo "text,$textnum,fail" >> "$1/RESULT"
+        fi
+        TEST_NUMBER=$((TEST_NUMBER+1))
+    done < <( find "$1" -mindepth 1 -maxdepth 1 -name "expected-text-*.txt" -type f -print0 | sed -znE 's|.*/expected-text-([0-9]+).*|\1|p' )
+}
+
 export TEST_NUMBER=1
 
 
-echo "1..$(find . -mindepth 2 -maxdepth 2 -name "expected-screenshot-*.png" -type f -printf '.' | wc -c)"
+echo "1..$(find . -mindepth 2 -maxdepth 2 \( -name "expected-screenshot-*.png" -o -name "expected-text-*.txt" \) -type f -printf '.' | wc -c)"
 while read -d $'\0' file
 do
+    rm "$file/RESULT"
     TEST_NAME="$(head -1 "$file/DESCRIPTION")"
     test-rofi "$file/script"
-    while read -d $'\0' scrshtnum
-    do
-        RESULT="$(compare-result "$file" "$scrshtnum")"
-        if [ "$RESULT" = "0" ]; then
-            echo "ok $TEST_NUMBER - $TEST_NAME - screenshot $scrshtnum equal"; 
-            echo "pass" > "$file/RESULT"
-        else 
-            echo "not ok $TEST_NUMBER - $TEST_NAME - screenshot $scrshtnum diffferent, $RESULT"; 
-            echo "fail" > "$file/RESULT"
-        fi
-        TEST_NUMBER=$((TEST_NUMBER+1))
-    done < <( find "$file" -mindepth 1 -maxdepth 1 -name "expected-screenshot-*.png" -type f -print0 | sed -znE 's|.*/expected-screenshot-([0-9]+).*|\1|p' )
+    validate-screenshots "$file"
+    validate-texts "$file"
 done < <(find . -mindepth 1 -maxdepth 1 -name "UI*" -type d -print0 | sort -z)
