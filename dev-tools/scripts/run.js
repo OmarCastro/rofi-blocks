@@ -494,23 +494,42 @@ async function loadDom () {
 async function generateUITestBlock(foldername){
   const escapeHtml = (s) => s.replace(/[^0-9A-Za-z ]/g,c => "&#" + c.charCodeAt(0) + ";");
   const testDescription = await readFile(`build-docs/${foldername}/DESCRIPTION`)
-  const testResult = await readFile(`build-docs/${foldername}/RESULT`)
+  const testResultsText = await readFile(`build-docs/${foldername}/RESULT`)
   const [testName, ...description] = testDescription.split('\n').map(escapeHtml)
-  const passed = testResult.trim() === "pass"
+  const testResults = testResultsText.split('\n').filter(line => line.trim()).map(line => {
+    const [type, number, status] = line.trim().split(',')
+    return {type, number, status}
+  })
+  const allPassed = testResults.every(({status}) => status === "pass")
 
 
   return `
   <section class="test-case-report">
-  <h3>${passed ? "️✅" : "❌" } ${testName}</h3>
+  <h3>${allPassed ? "️✅" : "❌" } ${testName}</h3>
   <div>${description.join('\n')}</div>
+
   <section>
       <div>
           <script type="text/plain" class="bash-example" ss:include="${foldername}/script.txt"></script>
       </div>
       <div class="caption">Rofi block script</div>
   </section>
+  ${testResults
+    .filter(({type}) => type === "screenshot")
+    .map(({number, status})=>generateUITestScreenshotBlock(foldername, number, status))
+    .join("")
+  }
 
-  <section class="tabs">
+</section>
+`
+
+} 
+
+function generateUITestScreenshotBlock(foldername, screenshotNumber, status){
+  const passed = status === "pass"
+  return `<details ${passed ? '': 'open'}>
+    <summary><h4 class="no-toc" style="display: inline">${passed ? "️✅" : "❌" } screenshot ${screenshotNumber}</h4></summary>
+    <section class="tabs">
     <form>
     <label> <input type="radio" name="tab" value="2up" checked> 2-up </label>
     <label> <input type="radio" name="tab" value="slider"> slider </label>
@@ -521,10 +540,10 @@ async function generateUITestBlock(foldername){
   <section class="images--slider">
       <div class="comparison-slider">
         <div class="overlay"><strong>Expected</strong> image.</div>
-        <img src="${foldername}/expected-screenshot-1.png" alt="expected screenshot">
+        <img src="${foldername}/expected-screenshot-${screenshotNumber}.png" alt="expected screenshot">
         <div class="resize">
             <div class="overlay"> <strong>Result</strong> image.</div>
-            <img src="${foldername}/result-screenshot-1.png" alt="result screenshot">
+            <img src="${foldername}/result-screenshot-${screenshotNumber}.png" alt="result screenshot">
         </div>
         <div class="divider"></div>
       </div>
@@ -533,22 +552,20 @@ async function generateUITestBlock(foldername){
 
   <section class="images--2up">
       <div class="image-figure">
-        <img src="${foldername}/result-screenshot-1.png" alt="result screenshot">
+        <img src="${foldername}/result-screenshot-${screenshotNumber}.png" alt="result screenshot">
         <div class="caption"> <strong>Result</strong> image. </div>
       </div>
 
       <div class="image-figure">
-        <img src="${foldername}/expected-screenshot-1.png" alt="expected screenshot">
+        <img src="${foldername}/expected-screenshot-${screenshotNumber}.png" alt="expected screenshot">
         <div class="caption"> <strong>Expected</strong> image. </div>
       </div>
   </section>
 
   <section class="images--diff">
-      <img class="diff-image" src="${foldername}/diff-screenshot-1.png" alt="diffence image">
+      <img class="diff-image" src="${foldername}/diff-screenshot-${screenshotNumber}.png" alt="diffence image">
       <div class="caption">Pixel difference map image</div>
   </section>
-
-</section>
-`
-
-} 
+  
+</details>`
+}
