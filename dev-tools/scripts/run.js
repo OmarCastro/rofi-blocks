@@ -502,10 +502,11 @@ async function generateUITestBlock(foldername){
   })
   const allPassed = testResults.every(({status}) => status === "pass")
 
+  const testHtmlId = testName.trim().toLowerCase().replaceAll(/\s+/g, '-')
 
   return `
   <section class="test-case-report">
-  <h3>${allPassed ? "️✅" : "❌" } ${testName}</h3>
+  <h3 id="ui-test--${testHtmlId}">${allPassed ? "️✅" : "❌" } ${testName}</h3>
   <div>${description.join('\n')}</div>
 
   <details>
