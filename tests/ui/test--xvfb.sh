@@ -55,7 +55,7 @@ export TEST_NUMBER=1
 echo "1..$(find . -mindepth 2 -maxdepth 2 \( -name "expected-screenshot-*.png" -o -name "expected-text-*.txt" \) -type f -printf '.' | wc -c)"
 while read -d $'\0' file
 do
-    rm "$file/RESULT"
+    rm -rf "$file/RESULT"
     TEST_NAME="$(head -1 "$file/DESCRIPTION")"
     test-rofi "$file/script"
     validate-screenshots "$file"
