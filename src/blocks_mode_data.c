@@ -40,6 +40,7 @@ BlocksModePrivateData * blocks_mode_private_data_new(void){
     pd->active_line = g_string_sized_new (1024);
     pd->waiting_for_idle = FALSE;
     pd->parser = json_parser_new ();
+    pd->paintNumber = -1;
     return pd;
 }
 
@@ -85,6 +86,7 @@ void blocks_mode_private_data_update_page(BlocksModePrivateData * data){
     blocks_mode_private_data_update_input_format(data);
     blocks_mode_private_data_update_lines(data);
     blocks_mode_private_data_update_focus_entry(data);
+    data->paintNumber = 0;
 }
 
 

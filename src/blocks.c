@@ -141,6 +141,18 @@ static PageData * mode_get_private_data_current_page(const Mode *sw){
     return mode_get_private_data_extended_mode( sw )->currentPageData;
 }
 
+static void set_active_entry(gpointer context){
+    BlocksModePrivateData *data = (BlocksModePrivateData *) context;
+    // we also check for entry_to_focus just in case
+    // the state is updated to render another page
+    gint64 entry_to_focus = data->entry_to_focus;
+    bool willFocusToEntry = entry_to_focus >= 0;
+    if(willFocusToEntry){
+        RofiViewState * rofiViewState = rofi_view_get_active();
+        rofi_view_set_selected_line(rofiViewState, (unsigned int) entry_to_focus);
+    }
+}
+
 /*******************
  main loop sources
 ********************/
@@ -202,6 +214,7 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition UNUSED(condition
         bool promptChanged = newPrompt != NULL && (oldPrompt == NULL || !g_string_equal(oldPrompt, newPrompt));
         bool inputChanged = newInput != NULL && (oldInput == NULL || !g_string_equal(oldInput, newInput));
         bool willFocusToEntry = entry_to_focus >= 0;
+        bool isFirstPaint = data->paintNumber == 0;
 
 
         if(overlayChanged){
@@ -225,6 +238,13 @@ static gboolean on_new_input ( GIOChannel *source, GIOCondition UNUSED(condition
         if(willFocusToEntry){
             RofiViewState * rofiViewState = rofi_view_get_active();
             g_debug("entry_to_focus %li", entry_to_focus);
+            if(isFirstPaint){
+                // on first paint rofi_view_set_selected_line does not work correctly,
+                // so we wait for a frame to fix it, we are going to wait a frame
+                // of a 30fps monitor, as it supports current and old monitors
+                unsigned int delay = 1000/30;
+                g_timeout_add_once (delay, set_active_entry, data);
+            }
             rofi_view_set_selected_line(rofiViewState, (unsigned int) entry_to_focus);
         }
 

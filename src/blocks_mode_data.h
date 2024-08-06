@@ -44,6 +44,7 @@ typedef struct
     gboolean waiting_for_idle;
 
     RenderState * render_state;
+    long paintNumber;
 
 } BlocksModePrivateData;
 
