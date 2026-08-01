@@ -33,13 +33,33 @@ jobs:
         uses: actions/checkout@v4
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: meson gcovr libjson-glib-1.0-0 libjson-glib-dev rofi rofi-dev valgrind xvfb xdotool libpng-dev libjpeg-dev libtiff-dev
+          packages: gcovr ninja-build pkg-config libglib2.0-dev libgmodule-2.0-dev libjson-glib-1.0-0 libjson-glib-dev libcairo2-dev libpango1.0-dev libpangocairo-1.0-0 libxkbcommon-dev libxkbcommon-x11-dev libxcb-ewmh-dev libxcb-icccm4-dev libxcb-xkb-dev libxcb-randr0-dev libxcb-xrm-dev libxcb-xinerama0-dev libstartup-notification0-dev libgdk-pixbuf2.0-dev libwayland-dev wayland-protocols flex bison check libxcb1-dev libxcb-util0-dev libxcb-cursor-dev libxcb-keysyms1-dev libjson-glib-1.0-0 libjson-glib-dev rofi rofi-dev valgrind xvfb xdotool libpng-dev libjpeg-dev libtiff-dev
           version: 1.0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: ⚙️ Install imagemagick
         run: |
+          sudo apt-get install -y python3-pip python3-setuptools python3-wheel python3-meson
+
+
+
+          git clone https://github.com/davatorium/rofi.git
+
+          cd rofi
+
+          git checkout 2.0.0
+
+          python3 -m mesonbuild.mesonmain setup build
+
+          python3 -m mesonbuild.mesonmain compile -C build
+
+          sudo -E python3 -m mesonbuild.mesonmain install -C build
+
+          sudo ldconfig
+
+          cd ..
+
           sudo apt-get update
           sudo apt-get -y install imagemagick
       - name: Setup build-test

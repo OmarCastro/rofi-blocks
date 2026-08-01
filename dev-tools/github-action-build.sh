@@ -6,21 +6,21 @@ echo "==============="
 echo "=== COMPILE ==="
 echo "==============="
 
-meson setup build-test -Db_coverage=true --warnlevel 2 -Dui_test=true || exit 1
-meson compile -C build-test || exit 1
+python3 -m mesonbuild.mesonmain setup build-test -Db_coverage=true --warnlevel 2 -Dui_test=true || exit 1
+python3 -m mesonbuild.mesonmain compile -C build-test || exit 1
 
 echo "==============="
 echo "=== INSTALL ==="
 echo "==============="
 
 
-sudo meson install -C build-test
+sudo -E python3 -m mesonbuild.mesonmain install -C build-test
 
 echo "================"
 echo "===== TEST ====="
 echo "================"
 
-meson test --wrap='valgrind --leak-check=full' -C build-test
+python3 -m mesonbuild.mesonmain test --wrap='valgrind --leak-check=full' -C build-test
 ninja coverage -C build-test
 ls build-test/meson-logs/testlog.json || cp build-test/meson-logs/testlog-valgrind.json build-test/meson-logs/testlog.json 
 ls build-test/meson-logs/testlog.txt || cp build-test/meson-logs/testlog-valgrind.txt build-test/meson-logs/testlog.txt 
