@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: meson ninja-build pkg-config libglib2.0-dev libgmodule-2.0-dev libjson-glib-1.0-0 libjson-glib-dev libcairo2-dev libpango1.0-dev libpangocairo-1.0-0 libxkbcommon-dev libxkbcommon-x11-dev libxcb-ewmh-dev libxcb-icccm4-dev libxcb-xkb-dev libxcb-randr0-dev libxcb-xrm-dev libxcb-xinerama0-dev libstartup-notification0-dev libgdk-pixbuf2.0-dev libwayland-dev wayland-protocols flex bison check libxcb1-dev libxcb-util0-dev libxcb-cursor-dev libxcb-keysyms1-dev
+          version: 1.0
+
+      - name: Install rofi 2.0.0
+        run: |
+          git clone https://github.com/davatorium/rofi.git
+          cd rofi
+          git checkout 2.0.0
+          meson setup build
+          meson compile -C build
+          sudo meson install -C build
+          sudo ldconfig
+
+      - name: Setup meson for rofi-blocks
+        run: meson setup build --buildtype=release
+
+      - name: Compile rofi-blocks
+        run: meson compile -C build
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            build/blocks.so
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

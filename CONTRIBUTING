@@ -43,7 +43,7 @@ problem does not already exist.
 
   | Dependency   | Version |
   |--------------|---------|
-  | rofi 	       | 1.4     |
+  | rofi 	       | 2.0.0     |
   | json-glib    | 1.0     |
 
 - You are familiar with Git.

@@ -32,7 +32,7 @@ rofi -modi blocks -show blocks -blocks-wrap /path/to/program
 
 | Dependency | Version |
 |------------|---------|
-| rofi 	     | 1.4     |
+| rofi 	     | 2.0.0     |
 | json-glib  | 1.0     |
 
 
