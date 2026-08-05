@@ -1,13 +1,13 @@
 {
     "type": "module",
     "dependencies": {
-        "badge-maker": "^5.0.2",
+        "badge-maker": "^6.0.0",
         "esbuild": "^0.28.1",
         "image-size": "^2.0.2",
-        "js-yaml": "^4.2.0",
-        "jsdom": "^29.1.1",
-        "marked": "^18.0.5",
-        "minimatch": "^10.2.5",
+        "js-yaml": "^5.2.3",
+        "jsdom": "^30.0.1",
+        "marked": "^18.0.9",
+        "minimatch": "^10.2.6",
         "prismjs": "^1.30.0"
     }
 }
