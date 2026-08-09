@@ -307,11 +307,14 @@ function asciiIconSvg (asciicode) {
 }
 
 async function makeBadge (params) {
-  const { default: libMakeBadge } = await import('badge-maker/lib/make-badge.js')
+  const { makeBadge: libMakeBadge } = await import('badge-maker')
+  const { logo, ...otherParams } = params
   return libMakeBadge({
     style: 'for-the-badge',
-    ...params,
+    logoBase64: logo,
+    ...otherParams,
   })
+
 }
 
 function getLightVersionOfBadgeColor (color) {
@@ -444,7 +447,7 @@ async function makeBadgeForTestResult (path) {
   const testAmountFromTap = stdout.split('\n')
     .filter(test => /^1../.test(test) )
     .map(line => +line.split('..')[1] ?? 0)
-    .reduce((a, b) => a + b)
+    .reduce((a, b) => a + b, 0)
   const testAmount =  testAmountFromTap || tests.length
   const passedAmount = passedTests.length
   const passed = passedAmount === testAmount
@@ -453,7 +456,6 @@ async function makeBadgeForTestResult (path) {
     message: `${passedAmount} / ${testAmount}`,
     color: passed ? '#007700' : '#aa0000',
     logo: asciiIconSvg('✔'),
-    logoWidth: 16,
   })
   const badgeWrite = writeFile(`${path}/test-results-badge.svg`, svg)
   const a11yBadgeWrite = writeFile(`${path}/test-results-badge-a11y.svg`, await applyA11yTheme(svg, { replaceIconToText: '✔' }))
