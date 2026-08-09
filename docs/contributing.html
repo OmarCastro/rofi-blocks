@@ -6,20 +6,20 @@
         <meta name="keywords" content="polkit policy-kit security documentation">
         <meta charset="UTF-8">
         <script type="module" src="doc.js" async></script>
-        <link rel="modulepreload" href="chunk/!(*.lazy.)*.js" as="script" ss:repeat-glob>
-        <link rel="modulepreload" href="chunk/*.lazy.*.js" as="script" fetchpriority="low" ss:repeat-glob>
+        <link rel="modulepreload" href="chunk/!(*.lazy.)*.js" as="script" p-repeat-glob>
+        <link rel="modulepreload" href="chunk/*.lazy.*.js" as="script" fetchpriority="low" p-repeat-glob>
         <meta name="viewport" content="width=device-width">
-        <link rel="stylesheet" href="code-example.css" ss:inline>
-        <link rel="stylesheet" href="doc.css" ss:inline>
+        <link rel="stylesheet" href="code-example.css" p-inline>
+        <link rel="stylesheet" href="doc.css" p-inline>
     </head>
     <body>
         <div class="sidebar">
             <div class="toc">
                 <p><strong><a href=".">Documentation</a></strong></p>
                 <strong>How to contribute</strong>
-                <template ss:toc></template>
+                <template p-toc></template>
             </div>
         </div>
-        <div class="content" ss:markdown ss:include="../CONTRIBUTING"></div>
+        <div class="content" p-markdown p-include="../CONTRIBUTING"></div>
     </body>
 </html>
