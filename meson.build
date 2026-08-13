@@ -65,7 +65,8 @@ if ui_test_enabled
   ui_test = join_paths(meson.source_root(), 'tests/ui/test.sh')
   test(
     'test-suite-ui',
-    find_program(ui_test),
+    find_program('bash'),
+    args: [ui_test],
     env: test_env,
     protocol: 'tap',
     workdir: join_paths(meson.current_source_dir(), 'tests')
