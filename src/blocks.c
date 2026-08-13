@@ -536,4 +536,8 @@ Mode mode =
     ._preprocess_input  = blocks_mode_preprocess_input,
     .private_data       = NULL,
     .free               = NULL,
+    .module             = NULL,
+    .fallback_icon_fetch_uid = 0,
+    .fallback_icon_not_found = 0,
+    .type               = MODE_TYPE_SWITCHER,
 };
