@@ -14,7 +14,7 @@ function test-rofi(){
 
 function compare-images(){
     cd ../../dev-tools/scripts
-    npx its-an-image-comparison -t 10 -a -f "%d %p" $1 $2 $3
+    npx its-an-image-comparison -t 5 -a -f "%d %p" $1 $2 $3
 }
 
 
