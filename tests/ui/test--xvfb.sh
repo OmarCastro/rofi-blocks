@@ -1,26 +1,37 @@
 #!/usr/bin/env bash
- 
+
+
 cd "$(dirname "${BASH_SOURCE[0]}")"
+(
+    # install npm packages if not installed yet
+    cd ../../dev-tools/scripts
+    [ -d "node_modules" ] || npm install
+)
 
 function test-rofi(){
     rofi -theme "./rofi-theme.rasi" -font "Arial 10" -modi blocks -show blocks -blocks-wrap "$1" > /dev/null
 }
 
+function compare-images(){
+    cd ../../dev-tools/scripts
+    npx its-an-image-comparison -t 10 -a -f "%d %p" $1 $2 $3
+}
+
 
 function compare-result(){
-    DIFF_PIXEL_AMOUNT="$(compare -fuzz 5% -metric AE ./"$1"/expected-screenshot-"$2".png ./"$1"/result-screenshot-"$2".png "$1"/diff-screenshot-"$2".png 2>&1)"
-    DIFF_PIXEL_PERC=$(echo "$((DIFF_PIXEL_AMOUNT * 100)) $((1280 * 720))" | awk '{printf "%.2f%\n", $1/$2}')
+    RESULT="$(compare-images "$1"/expected-screenshot-"$2".png "$1"/result-screenshot-"$2".png "$1"/diff-screenshot-"$2".png 2>&1)"
+    read -r DIFF_PIXEL_AMOUNT DIFF_PIXEL_PERC <<< "$RESULT"
     if [ "$DIFF_PIXEL_AMOUNT" = "0" ]; then
         echo 0
     else
-        echo "$DIFF_PIXEL_AMOUNT different pixels ($DIFF_PIXEL_PERC)"
+        echo "$DIFF_PIXEL_AMOUNT different pixels ($DIFF_PIXEL_PERC%)"
     fi
 }
 
 function validate-screenshots(){
     while read -d $'\0' scrshtnum
     do
-        RESULT="$(compare-result "$1" "$scrshtnum")"
+        RESULT="$(compare-result "$(realpath $1)" "$scrshtnum")"
         if [ "$RESULT" = "0" ]; then
             echo "ok $TEST_NUMBER - $TEST_NAME - screenshot $scrshtnum equal"; 
             echo "screenshot,$scrshtnum,pass" >> "$1/RESULT"

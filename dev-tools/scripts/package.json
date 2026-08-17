@@ -4,6 +4,7 @@
         "badge-maker": "^6.0.0",
         "esbuild": "^0.28.1",
         "image-size": "^2.0.2",
+        "its-an-image-comparison": "^0.3.0",
         "js-yaml": "^5.2.3",
         "jsdom": "^30.0.1",
         "marked": "^18.0.9",
