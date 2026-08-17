@@ -514,7 +514,7 @@ async function generateUITestBlock(foldername){
   <details>
       <summary><h4 class="no-toc" style="display: inline">Rofi script</h4></summary>
       <div>
-          <script type="text/plain" class="bash-example" ss:include="${foldername}/script.txt"></script>
+          <script type="text/plain" class="bash-example" p-include="${foldername}/script.txt"></script>
       </div>
       <div class="caption">Rofi block script</div>
   </details>
@@ -584,16 +584,16 @@ function generateUITestTextBlock(foldername, textNumber, status){
   return `<details ${passed ? '': 'open'} class="test-text">
     <summary><h4 class="no-toc" style="display: inline">${passed ? "️✅" : "❌" } text ${textNumber}</h4></summary>
     <div>
-          <script type="text/plain" class="line-numbers text-example" ss:include="${foldername}/result-text-${textNumber}.txt"></script>
+          <script type="text/plain" class="line-numbers text-example" p-include="${foldername}/result-text-${textNumber}.txt"></script>
           <div class="caption">Result text</div>
     </div>
     <div>
-        <script type="text/plain" class="line-numbers text-example" ss:include="${foldername}/expected-text-${textNumber}.txt"></script>
+        <script type="text/plain" class="line-numbers text-example" p-include="${foldername}/expected-text-${textNumber}.txt"></script>
         <div class="caption">Expected text</div>
     </div>
 
     <div>
-        <script type="text/plain" class="text-example" ss:include="${foldername}/diff-text-${textNumber}.txt"></script>
+        <script type="text/plain" class="text-example" p-include="${foldername}/diff-text-${textNumber}.txt"></script>
         <div class="caption">Unified Diff</div>
     </div>
   
