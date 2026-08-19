@@ -442,11 +442,11 @@ makeBadgeForRelease
 
 async function makeBadgeForTestResult (path) {
   const stdout = await readFile(`${path}/testlog.json`).then(str => str.split("\n").map(line => line ? JSON.parse(line).stdout: "").join(''))
-  const tests = stdout.split('\n').filter(test => /^n?ok /.test(test) )
+  const tests = stdout.split('\n').filter(test => /^(not )?ok \d+/.test(test) )
   const passedTests = tests.filter(test => test.startsWith('ok'))
   const testAmountFromTap = stdout.split('\n')
-    .filter(test => /^1../.test(test) )
-    .map(line => +line.split('..')[1] ?? 0)
+    .filter(test => /^1..\d+/.test(test) )
+    .map(line => +(line.split('..')[1]) ?? 0)
     .reduce((a, b) => a + b, 0)
   const testAmount =  testAmountFromTap || tests.length
   const passedAmount = passedTests.length
