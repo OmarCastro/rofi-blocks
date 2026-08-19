@@ -2,6 +2,7 @@
     "type": "module",
     "dependencies": {
         "badge-maker": "^6.0.0",
+        "esbuild": "^0.28.2",
         "image-size": "^2.0.2",
         "its-an-image-comparison": "^0.3.0",
         "js-yaml": "^5.3.0",
